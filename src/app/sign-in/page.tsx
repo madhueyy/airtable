@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
 
-function page() {
+function Page() {
   const [isValidEmail, setIsValidEmail] = useState(false);
 
   // Not actually implemented with proper validation
@@ -66,4 +66,4 @@ function page() {
   );
 }
 
-export default page;
+export default Page;
