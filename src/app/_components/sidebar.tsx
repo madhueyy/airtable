@@ -3,19 +3,12 @@
 import React from "react";
 import { MdOutlineKeyboardArrowRight } from "react-icons/md";
 import { HiOutlinePlus } from "react-icons/hi2";
-import { useState } from "react";
 
-function Sidebar() {
-  const [isBaseModalOpen, setIsBaseModalOpen] = useState(false);
+interface SidebarProps {
+  openBaseModal: () => void;
+}
 
-  const openBaseModal = () => {
-    setIsBaseModalOpen(true);
-  };
-
-  const closeBaseModal = () => {
-    setIsBaseModalOpen(false);
-  };
-
+function Sidebar({ openBaseModal }: SidebarProps) {
   return (
     <div className="flex h-[92vh] w-[20%] flex-col justify-between border-r border-gray-300 bg-white px-4 py-4 drop-shadow-sm">
       <div className="flex flex-col gap-y-2">
