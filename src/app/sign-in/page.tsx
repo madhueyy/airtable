@@ -57,7 +57,7 @@ function Page() {
       {/* Sign in with google button */}
       <button
         className="flex min-w-[30%] items-center justify-center gap-x-2 rounded-2xl border-2 border-gray-300 py-2 text-xl shadow transition hover:border-black hover:bg-black/10"
-        onClick={() => signIn("google")}
+        onClick={() => signIn("google", { callbackUrl: "/home" })}
       >
         <img src="/Google_Logo.webp" className="h-7 w-7" />
         Sign in with Google

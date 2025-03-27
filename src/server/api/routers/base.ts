@@ -42,4 +42,14 @@ export const baseRouter = createTRPCRouter({
 
       return base;
     }),
+
+  getBases: protectedProcedure.query(async ({ ctx }) => {
+    const bases = await ctx.db.base.findMany({
+      where: {
+        createdById: ctx.session.user.id,
+      },
+    });
+
+    return bases;
+  }),
 });
