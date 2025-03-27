@@ -26,4 +26,20 @@ export const baseRouter = createTRPCRouter({
 
       return { id: base.id, name: base.name };
     }),
+
+  getBaseName: publicProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const base = await ctx.db.base.findUnique({
+        where: {
+          id: input.id,
+        },
+      });
+
+      if (!base) {
+        throw new Error("Base not found");
+      }
+
+      return base;
+    }),
 });
