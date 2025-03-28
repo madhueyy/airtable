@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Navbar from "~/app/_components/navbar";
 import Sidebar from "../_components/sidebar";
 import { useSession } from "next-auth/react";
@@ -10,8 +10,14 @@ import { useRouter } from "next/navigation";
 
 function page() {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [isBaseModalOpen, setIsBaseModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/");
+    }
+  }, [status, router]);
 
   const { data: bases, error } = api.base.getBases.useQuery();
 
