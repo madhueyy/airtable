@@ -31,7 +31,7 @@ function Page() {
 
   return (
     <div>
-      <Navbar userEmail={session?.user.email} />
+      <Navbar userName={session?.user.name} userImage={session?.user.image} />
 
       <main className="flex min-h-screen flex-row bg-gray-100">
         <Sidebar openBaseModal={openBaseModal} />
@@ -43,14 +43,16 @@ function Page() {
           {error ? (
             <p>Error: {error.message}</p>
           ) : (
-            <div className="flex gap-x-4">
+            // Bases
+            <div className="grid grid-cols-4 gap-x-4">
               {bases?.map((base) => (
                 <div
                   key={base.id}
-                  className="flex w-50 cursor-pointer items-center justify-between gap-x-2 rounded border p-4"
+                  className="flex w-64 cursor-pointer flex-col items-start justify-between gap-2 rounded-lg border border-gray-300 bg-white p-4 shadow"
                   onClick={() => router.push(`/base/${base.id}`)}
                 >
-                  <div className="text-lg font-medium">{base.name}</div>
+                  <div className="text-md font-medium">{base.name}</div>
+                  <div className="text-xs text-gray-600">Base</div>
                 </div>
               ))}
             </div>

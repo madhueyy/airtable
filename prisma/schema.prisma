@@ -82,15 +82,19 @@ model Base {
 
   createdBy   User   @relation(fields: [createdById], references: [id])
   createdById String
+
+  tables    Table[]
 }
 
-// model Table {
-//     id          String      @id @default(cuid())
-//     base        Base        @relation(fields: [baseId], references: [id], onDelete: Cascade)
-//     baseId      String
-//     columns     Column[]
-//     cells       Cell[]
-// }
+model Table {
+    id          String      @id @default(cuid())
+    name      String
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    base        Base        @relation(fields: [baseId], references: [id], onDelete: Cascade)
+    baseId      String
+}
 
 // model Column {
 //     columnNum   Int         @unique

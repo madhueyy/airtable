@@ -5,17 +5,33 @@ interface Row {
   [key: string]: string | number;
 }
 
-function Table() {
+function Table({ tableId }: { tableId: string }) {
   const [columns, setColumns] = useState(["Name", "Number"]);
+
+  // Set initial table data
   const [data, setData] = useState<Row[]>([
     { id: 1, Name: "", Number: "" },
     { id: 2, Name: "", Number: "" },
     { id: 3, Name: "", Number: "" },
   ]);
 
-  const handleCellChange = (column: string, row: number, value: string) => {
-    console.log(column, row, value);
+  const handleCellChange = (
+    column: string,
+    rowIndex: number,
+    value: string,
+  ) => {
+    console.log(column, rowIndex, value);
+
     // Change data in cells
+    setData((prevData) => {
+      return prevData.map((row, index) => {
+        if (index === rowIndex) {
+          return { ...row, [column]: value };
+        } else {
+          return row;
+        }
+      });
+    });
   };
 
   const addColumn = () => {
@@ -25,6 +41,17 @@ function Table() {
     setData((prevData) =>
       prevData.map((row) => ({ ...row, [newColumnName]: "" })),
     );
+  };
+
+  const addRow = () => {
+    setData((prevData) => {
+      const newRow = {
+        id: prevData.length + 1,
+        ...Object.fromEntries(columns.map((col) => [col, ""])),
+      };
+
+      return [...prevData, newRow];
+    });
   };
 
   return (
@@ -42,10 +69,11 @@ function Table() {
               ))}
 
               {/* Add column button */}
-              <th className="border border-gray-300 px-8 py-1">
-                <button className="rounded text-black" onClick={addColumn}>
-                  +
-                </button>
+              <th
+                className="cursor-pointer border border-gray-300 px-8 py-1 hover:bg-gray-100"
+                onClick={addColumn}
+              >
+                <button className="cursor-pointer rounded text-black">+</button>
               </th>
             </tr>
           </thead>
@@ -54,16 +82,16 @@ function Table() {
           <tbody>
             {data.map((row, rowIndex) => (
               <tr key={row.id}>
-                {columns.map((col, colIndex) => (
+                {columns.map((column, columnIndex) => (
                   <td
-                    key={colIndex}
+                    key={columnIndex}
                     className="h-10 w-52 border border-gray-300"
                   >
                     <input
                       type="text"
-                      value={row[col] as string}
+                      value={row[column] as string}
                       onChange={(e) =>
-                        handleCellChange(col, rowIndex, e.target.value)
+                        handleCellChange(column, rowIndex, e.target.value)
                       }
                       className="h-full w-full"
                     />
@@ -74,8 +102,11 @@ function Table() {
 
             {/* Add row button */}
             <tr>
-              <td className="h-10 w-52 border border-gray-300 pl-4">
-                <button className="rounded text-black">+</button>
+              <td
+                className="h-10 w-52 cursor-pointer border border-gray-300 pl-4 hover:bg-gray-200"
+                onClick={addRow}
+              >
+                <button className="cursor-pointer rounded text-black">+</button>
               </td>
             </tr>
           </tbody>
