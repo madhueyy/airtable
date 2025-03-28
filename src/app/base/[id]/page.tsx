@@ -7,7 +7,7 @@ import { api } from "~/trpc/react";
 import { useRouter } from "next/navigation";
 
 function Page() {
-  const { id } = useParams();
+  const id = useParams().id as string;
   const router = useRouter();
 
   const { data: base, error } = api.base.getBaseName.useQuery({ id });

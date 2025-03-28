@@ -8,7 +8,7 @@ import Modal from "../_components/modal";
 import { api } from "~/trpc/react";
 import { useRouter } from "next/navigation";
 
-function page() {
+function Page() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const [isBaseModalOpen, setIsBaseModalOpen] = useState(false);
@@ -63,4 +63,4 @@ function page() {
   );
 }
 
-export default page;
+export default Page;
