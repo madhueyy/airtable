@@ -19,7 +19,6 @@ function Page() {
   const handleCreateTable = async () => {
     try {
       await createTable.mutateAsync({ baseId: id });
-      refetch();
     } catch (error) {
       console.log(error);
     }

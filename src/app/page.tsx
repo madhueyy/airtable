@@ -17,7 +17,7 @@ export default async function Home() {
   return (
     <HydrateClient>
       <div>
-        <Navbar userEmail={session?.user.email} />
+        <Navbar userName={session?.user.name} userImage={session?.user.image} />
 
         <main className="flex min-h-screen flex-row items-center justify-center bg-gray-100">
           <p className="text-3xl font-semibold text-black">Please Log In</p>
