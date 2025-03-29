@@ -1,19 +1,33 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { api } from "~/trpc/react";
 
-interface Row {
-  id: number;
-  [key: string]: string | number;
-}
+type Column = {
+  tableId: string;
+  id: string;
+  columnNum: number;
+  columnType: "TEXT" | "NUMBER";
+};
+
+type Cell = {
+  id: string;
+  tableId: string;
+  columnId: string;
+  rowNum: number;
+  value: string;
+};
 
 function Table({ tableId }: { tableId: string }) {
-  const [columns, setColumns] = useState(["Name", "Number"]);
-
+  const [columns, setColumns] = useState<Column[] | undefined>([]);
   // Set initial table data
-  const [data, setData] = useState<Row[]>([
-    { id: 1, Name: "", Number: "" },
-    { id: 2, Name: "", Number: "" },
-    { id: 3, Name: "", Number: "" },
-  ]);
+  const [data, setData] = useState<Cell[] | undefined>([]);
+
+  const { data: table, error } = api.table.getTable.useQuery({ tableId });
+
+  useEffect(() => {
+    setColumns(table?.columns);
+    setData(table?.cells);
+    console.log(table?.cells);
+  }, [table]);
 
   const handleCellChange = (
     column: string,
@@ -24,9 +38,9 @@ function Table({ tableId }: { tableId: string }) {
 
     // Change data in cells
     setData((prevData) => {
-      return prevData.map((row, index) => {
+      return prevData?.map((row, index) => {
         if (index === rowIndex) {
-          return { ...row, [column]: value };
+          return { ...row, value };
         } else {
           return row;
         }
@@ -34,25 +48,25 @@ function Table({ tableId }: { tableId: string }) {
     });
   };
 
-  const addColumn = () => {
-    const newColumnName = `Column ${columns.length + 1}`;
+  // const addColumn = () => {
+  //   const newColumnName = `Column ${columns.length + 1}`;
 
-    setColumns((prevColumns) => [...prevColumns, newColumnName]);
-    setData((prevData) =>
-      prevData.map((row) => ({ ...row, [newColumnName]: "" })),
-    );
-  };
+  //   setColumns((prevColumns) => [...prevColumns, newColumnName]);
+  //   setData((prevData) =>
+  //     prevData.map((row) => ({ ...row, [newColumnName]: "" })),
+  //   );
+  // };
 
-  const addRow = () => {
-    setData((prevData) => {
-      const newRow = {
-        id: prevData.length + 1,
-        ...Object.fromEntries(columns.map((col) => [col, ""])),
-      };
+  // const addRow = () => {
+  //   setData((prevData) => {
+  //     const newRow = {
+  //       id: prevData.length + 1,
+  //       ...Object.fromEntries(columns.map((col) => [col, ""])),
+  //     };
 
-      return [...prevData, newRow];
-    });
-  };
+  //     return [...prevData, newRow];
+  //   });
+  // };
 
   return (
     <div className="flex flex-col">
@@ -62,16 +76,16 @@ function Table({ tableId }: { tableId: string }) {
           {/* Each column's headings */}
           <thead className="h-10 w-52 border border-gray-300 bg-gray-200">
             <tr>
-              {columns.map((col, index) => (
+              {columns?.map((col, index) => (
                 <th key={index} className="border border-gray-300 font-normal">
-                  {col}
+                  Column {col.columnNum}
                 </th>
               ))}
 
               {/* Add column button */}
               <th
                 className="cursor-pointer border border-gray-300 px-8 py-1 hover:bg-gray-100"
-                onClick={addColumn}
+                // onClick={addColumn}
               >
                 <button className="cursor-pointer rounded text-black">+</button>
               </th>
@@ -80,18 +94,18 @@ function Table({ tableId }: { tableId: string }) {
 
           {/* Actual cells */}
           <tbody>
-            {data.map((row, rowIndex) => (
+            {data?.map((row, rowIndex) => (
               <tr key={row.id}>
-                {columns.map((column, columnIndex) => (
+                {columns?.map((column, columnIndex) => (
                   <td
                     key={columnIndex}
                     className="h-10 w-52 border border-gray-300"
                   >
                     <input
-                      type="text"
-                      value={row[column] as string}
+                      type={column.columnType.toLocaleLowerCase()}
+                      value={row.value as string}
                       onChange={(e) =>
-                        handleCellChange(column, rowIndex, e.target.value)
+                        handleCellChange(column.id, rowIndex, e.target.value)
                       }
                       className="h-full w-full"
                     />
@@ -104,7 +118,7 @@ function Table({ tableId }: { tableId: string }) {
             <tr>
               <td
                 className="h-10 w-52 cursor-pointer border border-gray-300 pl-4 hover:bg-gray-200"
-                onClick={addRow}
+                // onClick={addRow}
               >
                 <button className="cursor-pointer rounded text-black">+</button>
               </td>

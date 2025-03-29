@@ -29,6 +29,33 @@ export const tableRouter = createTRPCRouter({
         },
       });
 
+      // Make new columns
+      const columnId1 = nanoid();
+      const colRes = await ctx.db.column.createMany({
+        data: [
+          { id: columnId1, tableId: tableId, columnNum: 1, columnType: "TEXT" },
+        ],
+      });
+
+      // Make new rows
+      const rowNum = 3;
+      const cellsData = [];
+      for (let i = 1; i <= rowNum; i++) {
+        cellsData.push({
+          tableId,
+          columnId: columnId1,
+          columnNum: 1,
+          rowNum: i,
+          value: "",
+        });
+      }
+
+      const cellRes = await ctx.db.cell.createMany({
+        data: cellsData,
+      });
+
+      console.log(cellRes);
+
       return { id: table.id, name: table.name };
     }),
 
@@ -48,5 +75,21 @@ export const tableRouter = createTRPCRouter({
       }
 
       return tables;
+    }),
+
+  getTable: publicProcedure
+    .input(z.object({ tableId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const { tableId } = input;
+
+      const columns = await ctx.db.column.findMany({
+        where: { tableId },
+      });
+
+      const cells = await ctx.db.cell.findMany({
+        where: { tableId },
+      });
+
+      return { columns, cells };
     }),
 });
