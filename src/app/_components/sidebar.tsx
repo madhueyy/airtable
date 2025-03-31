@@ -4,9 +4,9 @@ import React from "react";
 import { MdOutlineKeyboardArrowRight } from "react-icons/md";
 import { HiOutlinePlus } from "react-icons/hi2";
 
-interface SidebarProps {
+type SidebarProps = {
   openBaseModal: () => void;
-}
+};
 
 function Sidebar({ openBaseModal }: SidebarProps) {
   return (

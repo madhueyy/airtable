@@ -1,6 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { api } from "~/trpc/react";
 import { nanoid } from "nanoid";
+import { FaPlus } from "react-icons/fa6";
+import { IoIosArrowDown } from "react-icons/io";
+import Dropdown from "./dropdown";
+import { MdNumbers } from "react-icons/md";
+import { BsAlphabetUppercase } from "react-icons/bs";
 
 type Column = {
   tableId: string;
@@ -21,11 +26,15 @@ type Cell = {
 
 function Table({ tableId }: { tableId: string }) {
   const [data, setData] = useState<Column[] | undefined>([]);
+  const [dropdownOpen, setDropdownOpen] = useState<{ [key: string]: boolean }>(
+    {},
+  );
 
   const { data: table, error } = api.table.getTable.useQuery({ tableId });
   const createColumn = api.table.addColumn.useMutation();
   const createRow = api.table.addRow.useMutation();
   const updateCellValue = api.table.updateCellValue.useMutation();
+  const updateColumnType = api.table.updateColumnType.useMutation();
 
   useEffect(() => {
     setData(table?.columns);
@@ -63,6 +72,31 @@ function Table({ tableId }: { tableId: string }) {
         value: updatedCell.value,
       });
     }
+  };
+
+  // Updates column type in data, closes column type drop down and
+  // sends request to update column type to database
+  const handleColumnTypeChange = (columnId: string, newType: string) => {
+    // Change column type in data
+    setData((prevData) => {
+      if (!prevData) return prevData;
+
+      return prevData.map((column) =>
+        column.id === columnId ? { ...column, columnType: newType } : column,
+      );
+    });
+
+    setDropdownOpen((prevState) => ({
+      ...prevState,
+      [columnId]: false,
+    }));
+
+    // Send request to db
+    updateColumnType.mutateAsync({
+      tableId: tableId,
+      columnId: columnId,
+      newType: newType as "TEXT" | "NUMBER",
+    });
   };
 
   // Adds new column to data and sends request to add new column
@@ -148,6 +182,13 @@ function Table({ tableId }: { tableId: string }) {
     }
   };
 
+  const openDropdown = (columnId: string) => {
+    setDropdownOpen((prevState) => ({
+      ...prevState,
+      [columnId]: !prevState[columnId],
+    }));
+  };
+
   return (
     <div className="flex flex-col">
       {/* The table */}
@@ -161,16 +202,42 @@ function Table({ tableId }: { tableId: string }) {
                   key={index}
                   className="border border-gray-300 py-2 font-normal"
                 >
-                  Column {col.columnNum}
+                  {/* Column heading name, type and drop down arrow */}
+                  <div
+                    className="flex cursor-pointer flex-row items-center justify-center"
+                    onClick={() => openDropdown(col.id)}
+                  >
+                    <div className="ml-auto flex flex-row items-center gap-x-2">
+                      {col.columnType === "TEXT" && (
+                        <BsAlphabetUppercase className="text-gray-500" />
+                      )}
+                      {col.columnType === "NUMBER" && (
+                        <MdNumbers className="text-gray-500" />
+                      )}
+                      Column {col.columnNum}
+                    </div>
+
+                    <IoIosArrowDown className="mr-2 ml-auto" />
+                  </div>
+
+                  {/* Dropdown menu for column type */}
+                  {dropdownOpen[col.id] && (
+                    <Dropdown
+                      onColumnTypeChange={handleColumnTypeChange}
+                      columnId={col.id}
+                    />
+                  )}
                 </th>
               ))}
 
               {/* Add column button */}
               <th
-                className="cursor-pointer border border-gray-300 px-8 py-2 hover:bg-gray-100"
+                className="cursor-pointer border border-gray-300 px-8 hover:bg-gray-100"
                 onClick={addColumn}
               >
-                <button className="cursor-pointer rounded text-black">+</button>
+                <button className="flex cursor-pointer items-center text-black">
+                  <FaPlus />
+                </button>
               </th>
             </tr>
           </thead>
@@ -202,12 +269,18 @@ function Table({ tableId }: { tableId: string }) {
                 </tr>
               ),
             )}
+            <tr>
+              <td
+                className="cursor-pointer border border-gray-300 p-3 hover:bg-gray-200"
+                onClick={addRow}
+              >
+                <button className="flex cursor-pointer items-center text-black">
+                  <FaPlus />
+                </button>
+              </td>
+            </tr>
           </tbody>
         </table>
-
-        <button className="cursor-pointer rounded text-black" onClick={addRow}>
-          +
-        </button>
       </div>
     </div>
   );

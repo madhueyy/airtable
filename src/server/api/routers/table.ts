@@ -206,4 +206,25 @@ export const tableRouter = createTRPCRouter({
 
       return updatedCell;
     }),
+
+  updateColumnType: protectedProcedure
+    .input(
+      z.object({
+        tableId: z.string(),
+        columnId: z.string(),
+        newType: z.nativeEnum(ColumnType),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const updatedColumn = await ctx.db.column.update({
+        where: {
+          id: input.columnId,
+        },
+        data: {
+          columnType: input.newType,
+        },
+      });
+
+      return updatedColumn;
+    }),
 });
