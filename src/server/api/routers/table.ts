@@ -5,6 +5,7 @@ import {
   publicProcedure,
 } from "~/server/api/trpc";
 import { nanoid } from "nanoid";
+import { ColumnType } from "@prisma/client";
 
 export const tableRouter = createTRPCRouter({
   createTable: protectedProcedure
@@ -20,43 +21,43 @@ export const tableRouter = createTRPCRouter({
 
       const tableName = `Table ${tables.length + 1}`;
       const tableId = nanoid();
+      const columnId1 = nanoid();
+      const rowNum = 3;
 
       const table = await ctx.db.table.create({
         data: {
           id: tableId,
           name: tableName,
           base: { connect: { id: input.baseId } },
+          columns: {
+            create: [
+              {
+                id: columnId1,
+                columnNum: 1,
+                columnType: "TEXT",
+                cells: {
+                  create: Array.from({ length: rowNum }, (_, i) => ({
+                    rowNum: i + 1,
+                    value: "",
+                    tableId: tableId,
+                    columnNum: 1,
+                  })),
+                },
+              },
+            ],
+          },
+        },
+        include: {
+          columns: {
+            include: {
+              cells: true,
+            },
+          },
         },
       });
 
-      // Make new columns
-      const columnId1 = nanoid();
-      const colRes = await ctx.db.column.createMany({
-        data: [
-          { id: columnId1, tableId: tableId, columnNum: 1, columnType: "TEXT" },
-        ],
-      });
-
-      // Make new rows
-      const rowNum = 3;
-      const cellsData = [];
-      for (let i = 1; i <= rowNum; i++) {
-        cellsData.push({
-          tableId,
-          columnId: columnId1,
-          columnNum: 1,
-          rowNum: i,
-          value: "",
-        });
-      }
-
-      const cellRes = await ctx.db.cell.createMany({
-        data: cellsData,
-      });
-
-      console.log(cellRes);
-
-      return { id: table.id, name: table.name };
+      console.log(table);
+      return table;
     }),
 
   getTables: publicProcedure
@@ -82,14 +83,127 @@ export const tableRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const { tableId } = input;
 
-      const columns = await ctx.db.column.findMany({
-        where: { tableId },
+      const table = await ctx.db.table.findUnique({
+        where: { id: tableId },
+        include: {
+          columns: {
+            include: {
+              cells: true,
+            },
+          },
+        },
       });
 
-      const cells = await ctx.db.cell.findMany({
-        where: { tableId },
+      return table;
+    }),
+
+  addColumn: protectedProcedure
+    .input(
+      z.object({
+        tableId: z.string(),
+        id: z.string(),
+        columnNum: z.number(),
+        columnType: z.nativeEnum(ColumnType),
+        cells: z.array(
+          z.object({
+            rowNum: z.number(),
+            value: z.string(),
+          }),
+        ),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const column = await ctx.db.column.create({
+        data: {
+          id: input.id,
+          tableId: input.tableId,
+          columnNum: input.columnNum,
+          columnType: input.columnType,
+          cells: {
+            create: input.cells.map((cell) => ({
+              rowNum: cell.rowNum,
+              value: cell.value,
+              columnNum: input.columnNum,
+              table: {
+                connect: { id: input.tableId },
+              },
+            })),
+          },
+        },
+        include: { cells: true },
       });
 
-      return { columns, cells };
+      return column;
+    }),
+
+  addRow: protectedProcedure
+    .input(
+      z.object({
+        tableId: z.string(),
+        cells: z.array(
+          z.object({
+            id: z.string(),
+            rowNum: z.number(),
+            value: z.string(),
+            columnId: z.string(),
+            columnNum: z.number(),
+          }),
+        ),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const table = await ctx.db.table.findUnique({
+        where: { id: input.tableId },
+        include: {
+          columns: true,
+        },
+      });
+
+      const newCells = input.cells.map((cell) => ({
+        id: cell.id,
+        rowNum: cell.rowNum,
+        value: cell.value,
+        tableId: input.tableId,
+        columnId: cell.columnId,
+        columnNum: cell.columnNum,
+      }));
+
+      await ctx.db.cell.createMany({
+        data: newCells,
+      });
+
+      const updatedTable = await ctx.db.table.findUnique({
+        where: { id: input.tableId },
+        include: {
+          columns: {
+            include: {
+              cells: true,
+            },
+          },
+        },
+      });
+
+      return updatedTable;
+    }),
+
+  updateCellValue: protectedProcedure
+    .input(
+      z.object({
+        tableId: z.string(),
+        cellId: z.string(),
+        value: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const updatedCell = await ctx.db.cell.update({
+        where: {
+          id: input.cellId,
+        },
+        data: {
+          value: input.value,
+        },
+      });
+
+      return updatedCell;
     }),
 });
