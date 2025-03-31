@@ -10,21 +10,29 @@ type ModalProps = {
 
 // Modal to create new base
 function Modal({ isOpen, onClose }: ModalProps) {
-  const [baseName, setBaseName] = useState("");
   const router = useRouter();
+
+  const [baseName, setBaseName] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
   const createBase = api.base.createBase.useMutation();
+  const createTable = api.table.createTable.useMutation();
 
   if (!isOpen) return null;
 
   const handleCreateBase = async () => {
+    setIsLoading(false);
     if (!baseName) return;
 
     try {
       const { id } = await createBase.mutateAsync({ name: baseName });
+      await createTable.mutateAsync({ baseId: id });
       router.push(`/base/${id}`);
     } catch (error) {
       console.log(error);
     }
+
+    setIsLoading(true);
   };
 
   return (
@@ -52,7 +60,7 @@ function Modal({ isOpen, onClose }: ModalProps) {
           <button
             className="text-md cursor-pointer rounded-lg bg-blue-600 px-4 py-2 text-white disabled:bg-blue-600/50"
             onClick={handleCreateBase}
-            disabled={!baseName}
+            disabled={!baseName || isLoading}
           >
             Create
           </button>

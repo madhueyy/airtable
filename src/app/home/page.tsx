@@ -44,7 +44,7 @@ function Page() {
             <p>Error: {error.message}</p>
           ) : (
             // Bases
-            <div className="grid grid-cols-4 gap-x-4">
+            <div className="grid grid-cols-4 gap-x-4 gap-y-4">
               {bases?.map((base) => (
                 <div
                   key={base.id}

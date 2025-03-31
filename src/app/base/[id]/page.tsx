@@ -1,28 +1,52 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Table from "~/app/_components/table";
 import { api } from "~/trpc/react";
 import { useRouter } from "next/navigation";
+
+type Table = {
+  id: string;
+  name: string;
+  createdAt: Date;
+  updatedAt: Date;
+  baseId: string;
+};
 
 function Page() {
   const id = useParams().id as string;
   const router = useRouter();
 
   const { data: base, error } = api.base.getBaseName.useQuery({ id });
-  const { data: tables, refetch } = api.table.getTables.useQuery({ id });
+  const { data: tables } = api.table.getTables.useQuery({ id });
   const createTable = api.table.createTable.useMutation();
 
+  const [allTables, setAllTables] = useState<Table[] | undefined>([]);
   const [currTable, setCurrTable] = useState<string | null>(null);
 
+  // Adds a new table to allTables and sends request to add new table
+  // to database
   const handleCreateTable = async () => {
     try {
-      await createTable.mutateAsync({ baseId: id });
+      // Send request to db
+      const newTable = await createTable.mutateAsync({ baseId: id });
+
+      // Add new table to allTables and change current tab to be the
+      // new table
+      setAllTables((prevTables) =>
+        prevTables ? [...prevTables, newTable] : [newTable],
+      );
+      setCurrTable(newTable.id);
     } catch (error) {
       console.log(error);
     }
   };
+
+  useEffect(() => {
+    setAllTables(tables);
+    setCurrTable(tables?.[0]?.id || null);
+  }, [tables]);
 
   const handleTableChange = (tableId: string) => {
     setCurrTable(tableId);
@@ -48,15 +72,17 @@ function Page() {
 
       {/* Tables tabs */}
       <div className="flex flex-row items-center bg-teal-700 px-4 pt-1">
-        {tables?.map(({ id: tableId, name }: { id: string; name: string }) => (
-          <div
-            key={tableId}
-            className={`cursor-pointer rounded-t px-4 py-1 ${currTable === tableId ? "bg-white" : "bg-teal-700 text-white hover:bg-teal-800"}`}
-            onClick={() => handleTableChange(tableId)}
-          >
-            {name}
-          </div>
-        ))}
+        {allTables?.map(
+          ({ id: tableId, name }: { id: string; name: string }) => (
+            <div
+              key={tableId}
+              className={`cursor-pointer rounded-t px-4 py-1 ${currTable === tableId ? "bg-white" : "bg-teal-700 text-white hover:bg-teal-800"}`}
+              onClick={() => handleTableChange(tableId)}
+            >
+              {name}
+            </div>
+          ),
+        )}
 
         <button
           className="cursor-pointer rounded-t bg-teal-700 px-4 py-1 text-white hover:bg-teal-800"

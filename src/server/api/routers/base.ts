@@ -24,16 +24,6 @@ export const baseRouter = createTRPCRouter({
         },
       });
 
-      // Make new table
-      const tableId = nanoid();
-      await ctx.db.table.create({
-        data: {
-          id: tableId,
-          name: "Table 1",
-          base: { connect: { id: baseId } },
-        },
-      });
-
       return { id: base.id, name: base.name };
     }),
 
