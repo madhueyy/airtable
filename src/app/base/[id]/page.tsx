@@ -45,7 +45,7 @@ function Page() {
 
   useEffect(() => {
     setAllTables(tables);
-    setCurrTable(tables?.[0]?.id || null);
+    setCurrTable(tables?.[0]?.id ?? null);
   }, [tables]);
 
   const handleTableChange = (tableId: string) => {

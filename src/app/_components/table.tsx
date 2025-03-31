@@ -26,9 +26,7 @@ type Cell = {
 
 function Table({ tableId }: { tableId: string }) {
   const [data, setData] = useState<Column[] | undefined>([]);
-  const [dropdownOpen, setDropdownOpen] = useState<{ [key: string]: boolean }>(
-    {},
-  );
+  const [dropdownOpen, setDropdownOpen] = useState<Record<string, boolean>>({});
 
   const { data: table, error } = api.table.getTable.useQuery({ tableId });
   const createColumn = api.table.addColumn.useMutation();
@@ -43,7 +41,7 @@ function Table({ tableId }: { tableId: string }) {
 
   // Updates cell value in data and sends request to update cell
   // value to database
-  const handleCellChange = (cellId: string, value: string) => {
+  const handleCellChange = async (cellId: string, value: string) => {
     console.log(cellId, value);
 
     // Change data in cells
@@ -66,17 +64,21 @@ function Table({ tableId }: { tableId: string }) {
 
     // Send request to db
     if (updatedCell) {
-      updateCellValue.mutateAsync({
-        tableId: tableId,
-        cellId: updatedCell.id,
-        value: updatedCell.value,
-      });
+      try {
+        await updateCellValue.mutateAsync({
+          tableId: tableId,
+          cellId: updatedCell.id,
+          value: updatedCell.value,
+        });
+      } catch (error) {
+        console.log(error);
+      }
     }
   };
 
   // Updates column type in data, closes column type drop down and
   // sends request to update column type to database
-  const handleColumnTypeChange = (columnId: string, newType: string) => {
+  const handleColumnTypeChange = async (columnId: string, newType: string) => {
     // Change column type in data
     setData((prevData) => {
       if (!prevData) return prevData;
@@ -92,11 +94,15 @@ function Table({ tableId }: { tableId: string }) {
     }));
 
     // Send request to db
-    updateColumnType.mutateAsync({
-      tableId: tableId,
-      columnId: columnId,
-      newType: newType as "TEXT" | "NUMBER",
-    });
+    try {
+      await updateColumnType.mutateAsync({
+        tableId: tableId,
+        columnId: columnId,
+        newType: newType as "TEXT" | "NUMBER",
+      });
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   // Adds new column to data and sends request to add new column
@@ -106,9 +112,9 @@ function Table({ tableId }: { tableId: string }) {
       return;
     }
 
-    const colLength = data?.length || 0;
+    const colLength = data?.length ?? 0;
     const newColumnId = nanoid();
-    const rowLength = table.columns[0]?.cells.length || 3;
+    const rowLength = table.columns[0]?.cells.length ?? 3;
 
     const newColumn = {
       tableId: tableId,
@@ -125,7 +131,7 @@ function Table({ tableId }: { tableId: string }) {
       })),
     };
 
-    setData((prev) => [...(prev || []), newColumn]);
+    setData((prev) => [...(prev ?? []), newColumn]);
 
     // Send request to db
     try {
@@ -149,9 +155,9 @@ function Table({ tableId }: { tableId: string }) {
       return;
     }
 
-    const newRowNum = table.columns[0]?.cells.length || 0;
+    const newRowNum = table.columns[0]?.cells.length ?? 0;
 
-    const newCells = (data || []).map((col) => ({
+    const newCells = (data ?? []).map((col) => ({
       id: nanoid(),
       rowNum: newRowNum + 1,
       value: "",
@@ -164,7 +170,7 @@ function Table({ tableId }: { tableId: string }) {
       return prev?.map((column) => {
         const updatedCells = [
           ...column?.cells,
-          newCells?.find((cell) => cell.columnId === column.id)!,
+          newCells.find((cell) => cell.columnId === column.id)!,
         ];
 
         return { ...column, cells: updatedCells };
@@ -180,6 +186,14 @@ function Table({ tableId }: { tableId: string }) {
     } catch (error) {
       console.log(error);
     }
+  };
+
+  const addRows = async () => {
+    const newRows = Array.from({ length: 100000 }).map((_, rowIndex) => ({
+      id: nanoid(),
+      value: "",
+      tableId: tableId,
+    }));
   };
 
   const openDropdown = (columnId: string) => {
@@ -244,7 +258,7 @@ function Table({ tableId }: { tableId: string }) {
 
           {/* All the cells */}
           <tbody>
-            {Array.from({ length: data?.[0]?.cells.length || 0 }).map(
+            {Array.from({ length: data?.[0]?.cells.length ?? 0 }).map(
               (row, rowIndex) => (
                 <tr key={rowIndex}>
                   {data?.map((col) => {
@@ -281,6 +295,13 @@ function Table({ tableId }: { tableId: string }) {
             </tr>
           </tbody>
         </table>
+
+        <button
+          className="mx-auto mt-2 flex cursor-pointer items-center justify-center gap-x-2 rounded bg-blue-500 px-3 py-1 text-white"
+          onClick={addRows}
+        >
+          Add 100k Rows
+        </button>
       </div>
     </div>
   );
