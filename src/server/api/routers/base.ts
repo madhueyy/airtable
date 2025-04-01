@@ -52,4 +52,34 @@ export const baseRouter = createTRPCRouter({
 
     return bases;
   }),
+
+  editBaseName: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        name: z.string().min(1, "Base name is required"),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const updatedBase = await ctx.db.base.update({
+        where: { id: input.id },
+        data: { name: input.name },
+      });
+
+      return updatedBase;
+    }),
+
+  deleteBase: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db.base.delete({
+        where: { id: input.id },
+      });
+
+      return { success: true };
+    }),
 });

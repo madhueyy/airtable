@@ -6,6 +6,7 @@ import {
 } from "~/server/api/trpc";
 import { nanoid } from "nanoid";
 import { ColumnType } from "@prisma/client";
+import { faker } from "@faker-js/faker";
 
 export const tableRouter = createTRPCRouter({
   createTable: protectedProcedure
@@ -38,7 +39,7 @@ export const tableRouter = createTRPCRouter({
                 cells: {
                   create: Array.from({ length: rowNum }, (_, i) => ({
                     rowNum: i + 1,
-                    value: "",
+                    value: faker.person.fullName(),
                     tableId: tableId,
                     columnNum: 1,
                   })),
@@ -226,5 +227,35 @@ export const tableRouter = createTRPCRouter({
       });
 
       return updatedColumn;
+    }),
+
+  editTableName: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        name: z.string().min(1, "Table name is required"),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const updatedTable = await ctx.db.table.update({
+        where: { id: input.id },
+        data: { name: input.name },
+      });
+
+      return updatedTable;
+    }),
+
+  deleteTable: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db.table.delete({
+        where: { id: input.id },
+      });
+
+      return { success: true };
     }),
 });
