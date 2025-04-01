@@ -6,6 +6,7 @@ import { IoIosArrowDown } from "react-icons/io";
 import Dropdown from "./dropdown";
 import { MdNumbers } from "react-icons/md";
 import { BsAlphabetUppercase } from "react-icons/bs";
+import { useVirtualizer } from "@tanstack/react-virtual";
 
 type Column = {
   tableId: string;
@@ -34,10 +35,28 @@ function Table({ tableId }: { tableId: string }) {
   const updateCellValue = api.table.updateCellValue.useMutation();
   const updateColumnType = api.table.updateColumnType.useMutation();
 
+  const parentRef = React.useRef(null);
+
   useEffect(() => {
     setData(table?.columns);
     console.log(table);
   }, [table]);
+
+  const rowVirtualizer = useVirtualizer({
+    count: data?.[0]?.cells.length ?? 0,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 35,
+    overscan: 5,
+  });
+
+  const virtualItems = rowVirtualizer.getVirtualItems();
+  const paddingTop = virtualItems.length > 0 ? virtualItems[0]?.start || 0 : 0;
+  const paddingBottom =
+    virtualItems.length > 0
+      ? rowVirtualizer.getTotalSize() -
+        ((virtualItems[virtualItems.length - 1]?.start || 0) +
+          (virtualItems[virtualItems.length - 1]?.size || 0))
+      : 0;
 
   // Updates cell value in data and sends request to update cell
   // value to database
@@ -189,11 +208,44 @@ function Table({ tableId }: { tableId: string }) {
   };
 
   const addRows = async () => {
-    const newRows = Array.from({ length: 100000 }).map((_, rowIndex) => ({
-      id: nanoid(),
-      value: "",
-      tableId: tableId,
-    }));
+    console.log("hello");
+
+    const currRowLength = data?.[0]?.cells.length ?? 0;
+
+    const newCells = Array.from({ length: 100000 }).flatMap((_, rowIndex) => {
+      const newRowNum = currRowLength + rowIndex + 1;
+
+      return data?.map((column) => ({
+        id: nanoid(),
+        rowNum: newRowNum,
+        value: "",
+        tableId: tableId,
+        columnId: column.id,
+        columnNum: column.columnNum,
+      }));
+    });
+
+    setData((prev) => {
+      return prev?.map((column) => {
+        const foundCell = newCells.find((cell) => cell?.columnId === column.id);
+
+        const updatedCells = foundCell
+          ? [...column?.cells, foundCell]
+          : [...column?.cells];
+
+        return { ...column, cells: updatedCells };
+      });
+    });
+
+    // Send request to db
+    try {
+      await createRow.mutateAsync({
+        tableId: tableId,
+        cells: newCells.map(({ ...rest }) => rest),
+      });
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   const openDropdown = (columnId: string) => {
@@ -206,10 +258,10 @@ function Table({ tableId }: { tableId: string }) {
   return (
     <div className="flex flex-col">
       {/* The table */}
-      <div>
+      <div ref={parentRef} className="max-h-[74vh] overflow-auto">
         <table>
           {/* Each column's headings */}
-          <thead className="border border-gray-300 bg-gray-200">
+          <thead className="sticky top-0 border border-gray-300 bg-gray-200">
             <tr>
               {data?.map((col, index) => (
                 <th
@@ -257,9 +309,20 @@ function Table({ tableId }: { tableId: string }) {
           </thead>
 
           {/* All the cells */}
-          <tbody>
-            {Array.from({ length: data?.[0]?.cells.length ?? 0 }).map(
-              (row, rowIndex) => (
+          <tbody ref={parentRef}>
+            {paddingTop > 0 && (
+              <tr>
+                <td
+                  // Not working with tailwind styling not sure why
+                  style={{ height: `${paddingTop}px` }}
+                ></td>
+              </tr>
+            )}
+
+            {virtualItems.map((virtualRow) => {
+              const rowIndex = virtualRow.index;
+
+              return (
                 <tr key={rowIndex}>
                   {data?.map((col) => {
                     // Get each cell
@@ -268,7 +331,10 @@ function Table({ tableId }: { tableId: string }) {
                     );
 
                     return (
-                      <td key={col.id} className="border border-gray-300">
+                      <td
+                        key={col.id}
+                        className="border border-gray-300 bg-white/75"
+                      >
                         <input
                           type={col.columnType}
                           value={cell?.value}
@@ -281,8 +347,18 @@ function Table({ tableId }: { tableId: string }) {
                     );
                   })}
                 </tr>
-              ),
+              );
+            })}
+
+            {paddingBottom > 0 && (
+              <tr>
+                <td
+                  // Not working with tailwind styling not sure why
+                  style={{ height: `${paddingBottom}px` }}
+                ></td>
+              </tr>
             )}
+
             <tr>
               <td
                 className="cursor-pointer border border-gray-300 p-3 hover:bg-gray-200"
@@ -295,9 +371,11 @@ function Table({ tableId }: { tableId: string }) {
             </tr>
           </tbody>
         </table>
+      </div>
 
+      <div className="mr-auto ml-2 flex">
         <button
-          className="mx-auto mt-2 flex cursor-pointer items-center justify-center gap-x-2 rounded bg-blue-500 px-3 py-1 text-white"
+          className="mx-auto mt-2 flex cursor-pointer items-center gap-x-2 rounded bg-blue-500 px-3 py-1 text-white"
           onClick={addRows}
         >
           Add 100k Rows
