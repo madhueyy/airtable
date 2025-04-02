@@ -182,11 +182,6 @@ function Page() {
         </button>
       </div>
 
-      {/* Searching and sorting buttons */}
-      <div className="flex flex-row items-center justify-center gap-x-4 border-b border-gray-300 bg-white px-4 py-2">
-        <p>Searching and sorting buttons go here</p>
-      </div>
-
       <div className="h-[100vh] w-[100vw] bg-gray-100">
         {currTable && <Table tableId={currTable} />}
       </div>

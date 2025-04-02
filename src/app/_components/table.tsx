@@ -7,6 +7,7 @@ import Dropdown from "./dropdown";
 import { MdNumbers } from "react-icons/md";
 import { BsAlphabetUppercase } from "react-icons/bs";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import { IoIosSearch } from "react-icons/io";
 
 type Column = {
   tableId: string;
@@ -28,6 +29,8 @@ type Cell = {
 function Table({ tableId }: { tableId: string }) {
   const [data, setData] = useState<Column[] | undefined>([]);
   const [dropdownOpen, setDropdownOpen] = useState<Record<string, boolean>>({});
+  const [searchInput, setSearchInput] = useState("");
+  const [highlightedCells, setHighlightedCells] = useState(new Set());
 
   const { data: table, error } = api.table.getTable.useQuery({ tableId });
   const createColumn = api.table.addColumn.useMutation();
@@ -255,8 +258,45 @@ function Table({ tableId }: { tableId: string }) {
     }));
   };
 
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchInput(e.target.value);
+  };
+
+  const highlightCells = (search: string) => {
+    const matchingCells = new Set<string>();
+
+    data?.forEach((col) => {
+      col.cells.forEach((cell) => {
+        if (
+          cell.value.toLocaleLowerCase().includes(search.toLocaleLowerCase())
+        ) {
+          matchingCells.add(cell.id);
+        }
+      });
+    });
+
+    setHighlightedCells(matchingCells);
+  };
+
+  useEffect(() => {
+    highlightCells(searchInput);
+  }, [searchInput, data]);
+
   return (
     <div className="flex flex-col">
+      {/* Searching and sorting buttons */}
+      <div className="flex flex-row items-center justify-center gap-x-4 border-b border-gray-300 bg-white px-4 py-2">
+        <div className="flex items-center gap-x-2 rounded-full border border-gray-300 px-4 py-1">
+          <IoIosSearch className="text-gray-400" />
+          <input
+            type="text"
+            value={searchInput}
+            placeholder="Search here..."
+            onChange={handleSearchChange}
+          ></input>
+        </div>
+      </div>
+
       {/* The table */}
       <div ref={parentRef} className="max-h-[74vh] overflow-auto">
         <table>
@@ -333,7 +373,7 @@ function Table({ tableId }: { tableId: string }) {
                     return (
                       <td
                         key={col.id}
-                        className="border border-gray-300 bg-white/75"
+                        className={`border border-gray-300 ${searchInput && highlightedCells.has(cell?.id) ? "bg-yellow-200" : "bg-white/75"}`}
                       >
                         <input
                           type={col.columnType}
