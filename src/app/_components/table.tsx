@@ -53,12 +53,13 @@ function Table({ tableId }: { tableId: string }) {
   });
 
   const virtualItems = rowVirtualizer.getVirtualItems();
-  const paddingTop = virtualItems.length > 0 ? virtualItems[0]?.start || 0 : 0;
+  const paddingTop =
+    virtualItems.length > 0 ? (virtualItems[0]?.start ?? 0) : 0;
   const paddingBottom =
     virtualItems.length > 0
       ? rowVirtualizer.getTotalSize() -
-        ((virtualItems[virtualItems.length - 1]?.start || 0) +
-          (virtualItems[virtualItems.length - 1]?.size || 0))
+        ((virtualItems[virtualItems.length - 1]?.start ?? 0) +
+          (virtualItems[virtualItems.length - 1]?.size ?? 0))
       : 0;
 
   // Updates cell value in data and sends request to update cell

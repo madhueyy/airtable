@@ -23,7 +23,7 @@ function Cells({ tableId }: { tableId: string }) {
 
   console.log("data ", data);
 
-  const cells = data?.pages.flatMap((page) => page.cells) || [];
+  const cells = data?.pages.flatMap((page) => page.cells) ?? [];
 
   const parentRef = React.useRef<HTMLDivElement>(null);
 
