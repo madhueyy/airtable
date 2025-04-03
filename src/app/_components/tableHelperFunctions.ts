@@ -22,11 +22,6 @@ type Cell = {
   columnNum: number;
 };
 
-const createColumn = api.table.addColumn.useMutation();
-const createRow = api.table.addRow.useMutation();
-const updateCellValue = api.table.updateCellValue.useMutation();
-const updateColumnType = api.table.updateColumnType.useMutation();
-
 // Updates cell value in data and sends request to update cell
 // value to database
 export const handleCellChange = async (
@@ -37,6 +32,7 @@ export const handleCellChange = async (
   tableId: string,
 ) => {
   console.log(cellId, value);
+  const updateCellValue = api.table.updateCellValue.useMutation();
 
   // Change data in cells
   setData((prevData) => {
@@ -81,6 +77,8 @@ export const handleColumnTypeChange = async (
   >,
   tableId: string,
 ) => {
+  const updateColumnType = api.table.updateColumnType.useMutation();
+
   // Change column type in data
   setData((prevData) => {
     if (!prevData) return prevData;
@@ -118,6 +116,7 @@ export const addColumn = async (
   if (!table) {
     return;
   }
+  const createColumn = api.table.addColumn.useMutation();
 
   const colLength = data?.length ?? 0;
   const newColumnId = nanoid();
@@ -166,6 +165,7 @@ export const addRow = async (
   if (!table) {
     return;
   }
+  const createRow = api.table.addRow.useMutation();
 
   const newRowNum = table.columns[0]?.cells.length ?? 0;
 
@@ -206,6 +206,7 @@ export const addRows = async (
   tableId: string,
 ) => {
   console.log("hello");
+  const createRow = api.table.addRow.useMutation();
 
   const currRowLength = data?.[0]?.cells.length ?? 0;
 
