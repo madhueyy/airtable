@@ -1,5 +1,4 @@
 import { nanoid } from "nanoid";
-import { api } from "~/trpc/react";
 
 type Table = {
   columns: Column[];
@@ -30,9 +29,10 @@ export const handleCellChange = async (
   data: Column[] | undefined,
   setData: React.Dispatch<React.SetStateAction<Column[] | undefined>>,
   tableId: string,
+  /* eslint-disable */
+  updateCellValue: any,
 ) => {
   console.log(cellId, value);
-  const updateCellValue = api.table.updateCellValue.useMutation();
 
   // Change data in cells
   setData((prevData) => {
@@ -76,9 +76,9 @@ export const handleColumnTypeChange = async (
     React.SetStateAction<Record<string, boolean>>
   >,
   tableId: string,
+  /* eslint-disable */
+  updateColumnType: any,
 ) => {
-  const updateColumnType = api.table.updateColumnType.useMutation();
-
   // Change column type in data
   setData((prevData) => {
     if (!prevData) return prevData;
@@ -112,11 +112,12 @@ export const addColumn = async (
   data: Column[] | undefined,
   setData: React.Dispatch<React.SetStateAction<Column[] | undefined>>,
   tableId: string,
+  /* eslint-disable */
+  createColumn: any,
 ) => {
   if (!table) {
     return;
   }
-  const createColumn = api.table.addColumn.useMutation();
 
   const colLength = data?.length ?? 0;
   const newColumnId = nanoid();
@@ -160,12 +161,13 @@ export const addRow = async (
   data: Column[] | undefined,
   setData: React.Dispatch<React.SetStateAction<Column[] | undefined>>,
   tableId: string,
+  /* eslint-disable */
+  createRow: any,
 ) => {
   console.log("ok");
   if (!table) {
     return;
   }
-  const createRow = api.table.addRow.useMutation();
 
   const newRowNum = table.columns[0]?.cells.length ?? 0;
 
@@ -204,9 +206,10 @@ export const addRows = async (
   data: Column[] | undefined,
   setData: React.Dispatch<React.SetStateAction<Column[] | undefined>>,
   tableId: string,
+  /* eslint-disable */
+  createRow: any,
 ) => {
   console.log("hello");
-  const createRow = api.table.addRow.useMutation();
 
   const currRowLength = data?.[0]?.cells.length ?? 0;
 

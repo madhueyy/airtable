@@ -49,6 +49,10 @@ function Table({ tableId }: { tableId: string }) {
   const [highlightedCells, setHighlightedCells] = useState(new Set());
 
   const { data: table, error } = api.table.getTable.useQuery({ tableId });
+  const createColumn = api.table.addColumn.useMutation();
+  const createRow = api.table.addRow.useMutation();
+  const updateCellValue = api.table.updateCellValue.useMutation();
+  const updateColumnType = api.table.updateColumnType.useMutation();
 
   const parentRef = React.useRef(null);
 
@@ -75,7 +79,7 @@ function Table({ tableId }: { tableId: string }) {
       : 0;
 
   const handleCellChangeFn = (cellId: string, value: string) =>
-    handleCellChange(cellId, value, data, setData, tableId);
+    handleCellChange(cellId, value, data, setData, tableId, updateCellValue);
   const handleColumnTypeChangeFn = (columnId: string, newType: string) =>
     handleColumnTypeChange(
       columnId,
@@ -83,10 +87,12 @@ function Table({ tableId }: { tableId: string }) {
       setData,
       setDropdownOpen,
       tableId,
+      updateColumnType,
     );
-  const addColumnFn = () => addColumn(table, data, setData, tableId);
-  const addRowFn = () => addRow(table, data, setData, tableId);
-  const addRowsFn = () => addRows(data, setData, tableId);
+  const addColumnFn = () =>
+    addColumn(table, data, setData, tableId, createColumn);
+  const addRowFn = () => addRow(table, data, setData, tableId, createRow);
+  const addRowsFn = () => addRows(data, setData, tableId, createRow);
 
   const openDropdown = (columnId: string) => {
     setDropdownOpen((prevState) => ({
