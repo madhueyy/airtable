@@ -45,6 +45,6 @@ yarn-error.log*
 # idea files
 .idea
 
-# just some files that im playing around with for infinite scrolling
+# just files that im playing around with for infinite scrolling
 src/app/_components/cells.tsx
 src/server/api/routers/cell.ts
