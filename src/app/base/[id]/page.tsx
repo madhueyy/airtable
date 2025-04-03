@@ -5,9 +5,12 @@ import React, { useEffect, useState } from "react";
 import Table from "~/app/_components/table";
 import { api } from "~/trpc/react";
 import { useRouter } from "next/navigation";
-import { BsThreeDots } from "react-icons/bs";
 import { MdEdit } from "react-icons/md";
 import { IoTrashOutline } from "react-icons/io5";
+import { IoIosArrowDown } from "react-icons/io";
+import { GoPeople } from "react-icons/go";
+import { GoBell } from "react-icons/go";
+import { useSession } from "next-auth/react";
 
 type Table = {
   id: string;
@@ -20,6 +23,7 @@ type Table = {
 function Page() {
   const id = useParams().id as string;
   const router = useRouter();
+  const { data: session } = useSession();
 
   const { data: base, error } = api.base.getBaseName.useQuery({ id });
   const { data: tables } = api.table.getTables.useQuery({ id });
@@ -112,77 +116,121 @@ function Page() {
       <div className="mb-auto flex flex-row items-center gap-x-4 bg-teal-600 px-4 py-3">
         <img
           src="/Airtable_Logo_white.png"
-          className="w-8 cursor-pointer"
+          className="w-5 cursor-pointer"
           onClick={() => router.push("/home")}
         />
 
         {/* Base name */}
         {error ? (
-          <p className="text-lg text-white">{error.message}</p>
+          <p className="text-lg font-semibold text-white">{error.message}</p>
         ) : (
-          <p className="text-lg text-white">{base?.name}</p>
+          <div className="flex flex-row items-center gap-x-2 text-white">
+            <p className="text-lg font-semibold">{base?.name}</p>
+            <IoIosArrowDown size={14} />
+          </div>
         )}
+
+        <div className="flex items-center gap-x-4 text-sm text-white">
+          <button className="rounded-full bg-black/30 px-3 py-1">Data</button>
+          <button className="cursor-pointer rounded-full px-3 py-1 hover:bg-black/20">
+            Automations
+          </button>
+          <button className="cursor-pointer rounded-full px-3 py-1 hover:bg-black/20">
+            Interfaces
+          </button>
+          <div className="h-[20px] w-[1px] bg-white/20"></div>
+          <button className="cursor-pointer rounded-full px-3 py-1 hover:bg-black/20">
+            Forms
+          </button>
+        </div>
+
+        <div className="ml-auto flex gap-x-4 text-sm text-teal-600">
+          <button className="flex items-center gap-x-1 rounded-full bg-white px-3 py-1">
+            <GoPeople />
+            Share
+          </button>
+          <button className="flex h-8 w-8 items-center justify-center rounded-full bg-white">
+            <GoBell />
+          </button>
+          {session?.user.image && (
+            <img
+              src={session?.user.image}
+              alt="User's profile picture"
+              className="w-8 rounded-full border border-white"
+            ></img>
+          )}
+        </div>
       </div>
 
-      {/* Tables tabs */}
-      <div className="flex flex-row items-center bg-teal-700 px-4 pt-1">
-        {allTables?.map(
-          ({ id: tableId, name }: { id: string; name: string }) => (
-            <div key={tableId}>
-              <div
-                className={`flex cursor-pointer items-center gap-x-2 rounded-t px-4 py-1 ${currTable === tableId ? "bg-white" : "bg-teal-700 text-white hover:bg-teal-800"}`}
-                onClick={() => handleTableChange(tableId)}
-              >
-                {editingTableId === tableId ? (
-                  <input
-                    type="text"
-                    value={editTableName}
-                    onChange={(e) => setEditTableName(e.target.value)}
-                    onBlur={handleSaveEdit}
-                    autoFocus
-                    className="w-full"
-                  />
-                ) : (
-                  <p>{name}</p>
-                )}
+      <div className="flex flex-row items-center bg-teal-600">
+        {/* Tables tabs */}
+        <div className="flex w-[90%] flex-row items-center rounded-tr-md bg-teal-700 px-4">
+          {allTables?.map(
+            ({ id: tableId, name }: { id: string; name: string }) => (
+              <div key={tableId}>
+                <div
+                  className={`flex cursor-pointer items-center gap-x-2 rounded-t px-4 py-1.5 text-sm ${currTable === tableId ? "bg-white" : "bg-teal-700 text-white hover:bg-teal-800"}`}
+                  onClick={() => handleTableChange(tableId)}
+                >
+                  {editingTableId === tableId ? (
+                    <input
+                      type="text"
+                      value={editTableName}
+                      onChange={(e) => setEditTableName(e.target.value)}
+                      onBlur={handleSaveEdit}
+                      autoFocus
+                      className="w-full"
+                    />
+                  ) : (
+                    <p>{name}</p>
+                  )}
 
-                <BsThreeDots onClick={(e) => openDropwdown(tableId, e)} />
-              </div>
-
-              {dropdownOpen === tableId && (
-                <div className="absolute z-1 cursor-pointer rounded border border-gray-300 bg-white shadow-sm">
-                  <ul className="text-md text-gray-700">
-                    <li
-                      className="flex items-center gap-x-2 px-2 py-1 hover:bg-blue-100"
-                      onClick={(e) => handleEditName(tableId, name, e)}
-                    >
-                      <MdEdit />
-                      <p className="text-black">Rename Table</p>
-                    </li>
-
-                    <li
-                      className="flex items-center gap-x-2 px-2 py-1 hover:bg-red-100"
-                      onClick={(e) => handleDeleteTable(tableId, e)}
-                    >
-                      <IoTrashOutline />
-                      <p className="text-black">Delete Table</p>
-                    </li>
-                  </ul>
+                  <IoIosArrowDown onClick={(e) => openDropwdown(tableId, e)} />
                 </div>
-              )}
-            </div>
-          ),
-        )}
 
-        <button
-          className="cursor-pointer rounded-t bg-teal-700 px-4 py-1 text-white hover:bg-teal-800"
-          onClick={handleCreateTable}
-        >
-          +
-        </button>
+                {dropdownOpen === tableId && (
+                  <div className="absolute z-1 mt-2 w-60 cursor-pointer rounded border border-gray-300 bg-white px-2 py-2 shadow-sm">
+                    <ul className="text-md text-sm text-gray-800">
+                      <li
+                        className="flex items-center gap-x-2 rounded-sm px-2 py-1 hover:bg-blue-100"
+                        onClick={(e) => handleEditName(tableId, name, e)}
+                      >
+                        <MdEdit />
+                        <p>Rename Table</p>
+                      </li>
+
+                      <li
+                        className="flex items-center gap-x-2 rounded-sm px-2 py-1 hover:bg-red-100"
+                        onClick={(e) => handleDeleteTable(tableId, e)}
+                      >
+                        <IoTrashOutline />
+                        <p>Delete Table</p>
+                      </li>
+                    </ul>
+                  </div>
+                )}
+              </div>
+            ),
+          )}
+
+          <button
+            className="cursor-pointer rounded-t bg-teal-700 px-4 py-1 text-white hover:bg-teal-800"
+            onClick={handleCreateTable}
+          >
+            +
+          </button>
+        </div>
+
+        <div className="ml-auto flex h-8 w-[9.5%] flex-row items-center gap-x-4 rounded-tl-md bg-teal-700 px-4 text-sm text-white">
+          <p>Extensions</p>
+
+          <div className="flex items-center gap-x-2">
+            <p>Tools</p> <IoIosArrowDown size={14} />
+          </div>
+        </div>
       </div>
 
-      <div className="h-[100vh] w-[100vw] bg-gray-100">
+      <div className="h-[100vh] w-[100vw] bg-[#f7f7f7]">
         {currTable && <Table tableId={currTable} />}
       </div>
     </div>

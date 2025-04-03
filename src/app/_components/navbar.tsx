@@ -5,6 +5,8 @@ import { signOut } from "next-auth/react";
 import { MdLogout } from "react-icons/md";
 import { MdLogin } from "react-icons/md";
 import { useRouter } from "next/navigation";
+import { IoIosSearch } from "react-icons/io";
+import { GoBell } from "react-icons/go";
 
 function Navbar({
   userName,
@@ -19,11 +21,17 @@ function Navbar({
     <div className="mb-auto flex flex-row items-center justify-between border-b border-gray-300 bg-white px-4 py-3 drop-shadow-sm">
       <img src="/Airtable_Logo.svg" className="w-26" />
 
+      <div className="flex w-[18%] items-center gap-x-2 rounded-full border border-gray-300 px-4 py-2 shadow">
+        <IoIosSearch className="text-black" size={18} />
+        <div className="text-sm text-gray-500">Search...</div>
+      </div>
+
       {userName ? (
         <div className="flex items-center gap-x-4">
-          <p className="text-md text-center text-black">
-            Logged in as {userName}
-          </p>
+          <button className="cursor-pointer rounded-full bg-white px-2 py-2 shadow hover:bg-gray-200">
+            <GoBell />
+          </button>
+
           {userImage && (
             <img
               src={userImage}

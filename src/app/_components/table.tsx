@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { api } from "~/trpc/react";
-import { nanoid } from "nanoid";
 import { FaPlus } from "react-icons/fa6";
 import { IoIosArrowDown } from "react-icons/io";
 import Dropdown from "./dropdown";
@@ -8,6 +7,23 @@ import { MdNumbers } from "react-icons/md";
 import { BsAlphabetUppercase } from "react-icons/bs";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { IoIosSearch } from "react-icons/io";
+import {
+  addColumn,
+  handleCellChange,
+  handleColumnTypeChange,
+  addRow,
+  addRows,
+} from "./tableHelperFunctions";
+import { GiHamburgerMenu } from "react-icons/gi";
+import { PiGridNineThin } from "react-icons/pi";
+import { HiOutlineUserGroup } from "react-icons/hi2";
+import { BiHide } from "react-icons/bi";
+import { IoFilter } from "react-icons/io5";
+import { BsCardList } from "react-icons/bs";
+import { PiArrowsDownUp } from "react-icons/pi";
+import { IoColorFillOutline } from "react-icons/io5";
+import { CgFormatLineHeight } from "react-icons/cg";
+import { GrShare } from "react-icons/gr";
 
 type Column = {
   tableId: string;
@@ -33,10 +49,6 @@ function Table({ tableId }: { tableId: string }) {
   const [highlightedCells, setHighlightedCells] = useState(new Set());
 
   const { data: table, error } = api.table.getTable.useQuery({ tableId });
-  const createColumn = api.table.addColumn.useMutation();
-  const createRow = api.table.addRow.useMutation();
-  const updateCellValue = api.table.updateCellValue.useMutation();
-  const updateColumnType = api.table.updateColumnType.useMutation();
 
   const parentRef = React.useRef(null);
 
@@ -62,195 +74,19 @@ function Table({ tableId }: { tableId: string }) {
           (virtualItems[virtualItems.length - 1]?.size ?? 0))
       : 0;
 
-  // Updates cell value in data and sends request to update cell
-  // value to database
-  const handleCellChange = async (cellId: string, value: string) => {
-    console.log(cellId, value);
-
-    // Change data in cells
-    setData((prevData) => {
-      if (!prevData) return prevData;
-
-      return prevData.map((column) => {
-        const updatedCells = column.cells.map((cell) =>
-          cell.id === cellId ? { ...cell, value } : cell,
-        );
-
-        return { ...column, cells: updatedCells };
-      });
-    });
-
-    const column = data?.find((col) =>
-      col.cells.some((cell) => cell.id === cellId),
+  const handleCellChangeFn = (cellId: string, value: string) =>
+    handleCellChange(cellId, value, data, setData, tableId);
+  const handleColumnTypeChangeFn = (columnId: string, newType: string) =>
+    handleColumnTypeChange(
+      columnId,
+      newType,
+      setData,
+      setDropdownOpen,
+      tableId,
     );
-    const updatedCell = column?.cells.find((cell) => cell.id === cellId);
-
-    // Send request to db
-    if (updatedCell) {
-      try {
-        await updateCellValue.mutateAsync({
-          tableId: tableId,
-          cellId: updatedCell.id,
-          value: updatedCell.value,
-        });
-      } catch (error) {
-        console.log(error);
-      }
-    }
-  };
-
-  // Updates column type in data, closes column type drop down and
-  // sends request to update column type to database
-  const handleColumnTypeChange = async (columnId: string, newType: string) => {
-    // Change column type in data
-    setData((prevData) => {
-      if (!prevData) return prevData;
-
-      return prevData.map((column) =>
-        column.id === columnId ? { ...column, columnType: newType } : column,
-      );
-    });
-
-    setDropdownOpen((prevState) => ({
-      ...prevState,
-      [columnId]: false,
-    }));
-
-    // Send request to db
-    try {
-      await updateColumnType.mutateAsync({
-        tableId: tableId,
-        columnId: columnId,
-        newType: newType as "TEXT" | "NUMBER",
-      });
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  // Adds new column to data and sends request to add new column
-  // to database
-  const addColumn = async () => {
-    if (!table) {
-      return;
-    }
-
-    const colLength = data?.length ?? 0;
-    const newColumnId = nanoid();
-    const rowLength = table.columns[0]?.cells.length ?? 3;
-
-    const newColumn = {
-      tableId: tableId,
-      id: newColumnId,
-      columnNum: colLength + 1,
-      columnType: "TEXT",
-      cells: Array.from({ length: rowLength }, (_, i) => ({
-        id: nanoid(),
-        rowNum: i + 1,
-        value: "",
-        tableId: tableId,
-        columnId: newColumnId,
-        columnNum: colLength + 1,
-      })),
-    };
-
-    setData((prev) => [...(prev ?? []), newColumn]);
-
-    // Send request to db
-    try {
-      await createColumn.mutateAsync({
-        tableId: tableId,
-        id: newColumn.id,
-        columnNum: newColumn.columnNum,
-        columnType: "TEXT",
-        cells: newColumn.cells,
-      });
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  // Adds new row to data and sends request to add new row
-  // to database
-  const addRow = async () => {
-    console.log("ok");
-    if (!table) {
-      return;
-    }
-
-    const newRowNum = table.columns[0]?.cells.length ?? 0;
-
-    const newCells = (data ?? []).map((col) => ({
-      id: nanoid(),
-      rowNum: newRowNum + 1,
-      value: "",
-      tableId: tableId,
-      columnId: col.id,
-      columnNum: col.columnNum,
-    }));
-
-    setData((prev) => {
-      return prev?.map((column) => {
-        const updatedCells = [
-          ...column?.cells,
-          newCells.find((cell) => cell.columnId === column.id)!,
-        ];
-
-        return { ...column, cells: updatedCells };
-      });
-    });
-
-    // Send request to db
-    try {
-      await createRow.mutateAsync({
-        tableId: tableId,
-        cells: newCells,
-      });
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  const addRows = async () => {
-    console.log("hello");
-
-    const currRowLength = data?.[0]?.cells.length ?? 0;
-
-    const newCells = Array.from({ length: 100000 }).flatMap((_, rowIndex) => {
-      const newRowNum = currRowLength + rowIndex + 1;
-
-      return data?.map((column) => ({
-        id: nanoid(),
-        rowNum: newRowNum,
-        value: "",
-        tableId: tableId,
-        columnId: column.id,
-        columnNum: column.columnNum,
-      }));
-    });
-
-    setData((prev) => {
-      return prev?.map((column) => {
-        const foundCell = newCells.find((cell) => cell?.columnId === column.id);
-
-        const updatedCells = foundCell
-          ? [...column?.cells, foundCell]
-          : [...column?.cells];
-
-        return { ...column, cells: updatedCells };
-      });
-    });
-
-    // Send request to db
-    try {
-      await createRow.mutateAsync({
-        tableId: tableId,
-        cells: newCells.map(({ ...rest }) => rest),
-      });
-    } catch (error) {
-      console.log(error);
-    }
-  };
+  const addColumnFn = () => addColumn(table, data, setData, tableId);
+  const addRowFn = () => addRow(table, data, setData, tableId);
+  const addRowsFn = () => addRows(data, setData, tableId);
 
   const openDropdown = (columnId: string) => {
     setDropdownOpen((prevState) => ({
@@ -269,14 +105,66 @@ function Table({ tableId }: { tableId: string }) {
   };
 
   useEffect(() => {
-    setHighlightedCells(new Set(highlightedCellIds || []));
+    setHighlightedCells(new Set(highlightedCellIds ?? []));
   }, [highlightedCellIds]);
 
   return (
     <div className="flex flex-col">
       {/* Searching and sorting buttons */}
-      <div className="flex flex-row items-center justify-end gap-x-4 border-b border-gray-300 bg-white px-4 py-2">
-        <div className="flex items-center gap-x-2 rounded-full border border-gray-300 px-4 py-1">
+      <div className="flex flex-row items-center justify-between gap-x-4 bg-white px-4 py-2">
+        {/* Filter, sort, view etc. buttons */}
+        <div className="flex flex-row items-center gap-x-2">
+          <div className="flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 text-sm font-medium hover:bg-gray-100">
+            <GiHamburgerMenu className="text-gray-500" />
+            <p>Views</p>
+          </div>
+
+          <div className="mx-2 h-[18px] w-[1px] bg-black/30"></div>
+
+          <div className="flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 font-medium hover:bg-gray-100">
+            <PiGridNineThin className="text-xl text-blue-500" />
+            <p className="text-sm">Grid view</p>
+            <HiOutlineUserGroup />
+            <IoIosArrowDown />
+          </div>
+
+          <div className="flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 text-sm font-medium hover:bg-gray-100">
+            <BiHide className="text-gray-600" />
+            <p>Hide Fields</p>
+          </div>
+
+          <div className="flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 text-sm font-medium hover:bg-gray-100">
+            <IoFilter className="text-gray-500" />
+            <p>Filter</p>
+          </div>
+
+          <div className="flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 text-sm font-medium hover:bg-gray-100">
+            <BsCardList className="text-gray-600" />
+            <p>Group</p>
+          </div>
+
+          <div className="flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 text-sm font-medium hover:bg-gray-100">
+            <PiArrowsDownUp className="text-gray-600" />
+            <p>Sort</p>
+          </div>
+
+          <div className="flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 text-sm font-medium hover:bg-gray-100">
+            <IoColorFillOutline className="text-gray-600" />
+            <p>Colour</p>
+          </div>
+
+          <div className="flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 font-medium hover:bg-gray-100">
+            <CgFormatLineHeight className="text-gray-600" />
+          </div>
+
+          <div className="flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 font-medium hover:bg-gray-100">
+            <GrShare className="text-xs text-gray-600" />
+            <p className="text-sm">Share and Sync</p>
+          </div>
+        </div>
+
+        {/* Search */}
+        <div className="mr-2 flex items-center gap-x-2 rounded-full border border-gray-300 px-4 py-1">
           <IoIosSearch className="text-gray-400" />
           <input
             type="text"
@@ -291,7 +179,7 @@ function Table({ tableId }: { tableId: string }) {
       <div ref={parentRef} className="max-h-[74vh] overflow-auto">
         <table>
           {/* Each column's headings */}
-          <thead className="sticky top-0 border border-gray-300 bg-gray-200">
+          <thead className="sticky top-0 border border-gray-300 bg-[#f4f4f4]">
             <tr>
               {data?.map((col, index) => (
                 <th
@@ -300,10 +188,10 @@ function Table({ tableId }: { tableId: string }) {
                 >
                   {/* Column heading name, type and drop down arrow */}
                   <div
-                    className="flex cursor-pointer flex-row items-center justify-center"
+                    className="flex cursor-pointer flex-row items-center text-[14px]"
                     onClick={() => openDropdown(col.id)}
                   >
-                    <div className="ml-auto flex flex-row items-center gap-x-2">
+                    <div className="ml-2 flex flex-row items-center gap-x-2">
                       {col.columnType === "TEXT" && (
                         <BsAlphabetUppercase className="text-gray-500" />
                       )}
@@ -313,13 +201,16 @@ function Table({ tableId }: { tableId: string }) {
                       Column {col.columnNum}
                     </div>
 
-                    <IoIosArrowDown className="mr-2 ml-auto" />
+                    <IoIosArrowDown
+                      className="mr-2 ml-auto text-gray-400"
+                      size={14}
+                    />
                   </div>
 
                   {/* Dropdown menu for column type */}
                   {dropdownOpen[col.id] && (
                     <Dropdown
-                      onColumnTypeChange={handleColumnTypeChange}
+                      onColumnTypeChange={handleColumnTypeChangeFn}
                       columnId={col.id}
                     />
                   )}
@@ -329,7 +220,7 @@ function Table({ tableId }: { tableId: string }) {
               {/* Add column button */}
               <th
                 className="cursor-pointer border border-gray-300 px-8 hover:bg-gray-100"
-                onClick={addColumn}
+                onClick={addColumnFn}
               >
                 <button className="flex cursor-pointer items-center text-black">
                   <FaPlus />
@@ -368,9 +259,9 @@ function Table({ tableId }: { tableId: string }) {
                         <input
                           type={col.columnType}
                           value={cell?.value}
-                          className="p-2"
+                          className="py-1.5 pl-2"
                           onChange={(e) =>
-                            handleCellChange(cell!.id, e.target.value)
+                            handleCellChangeFn(cell!.id, e.target.value)
                           }
                         ></input>
                       </td>
@@ -391,8 +282,8 @@ function Table({ tableId }: { tableId: string }) {
 
             <tr>
               <td
-                className="cursor-pointer border border-gray-300 p-3 hover:bg-gray-200"
-                onClick={addRow}
+                className="cursor-pointer border border-gray-300 py-2 pl-2 hover:bg-gray-200"
+                onClick={addRowFn}
               >
                 <button className="flex cursor-pointer items-center text-black">
                   <FaPlus />
@@ -406,7 +297,7 @@ function Table({ tableId }: { tableId: string }) {
       <div className="mr-auto ml-2 flex">
         <button
           className="mx-auto mt-2 flex cursor-pointer items-center gap-x-2 rounded bg-blue-500 px-3 py-1 text-white"
-          onClick={addRows}
+          onClick={addRowsFn}
         >
           Add 100k Rows
         </button>
