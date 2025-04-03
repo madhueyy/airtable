@@ -98,6 +98,27 @@ export const tableRouter = createTRPCRouter({
       return table;
     }),
 
+  getHighlightedCells: publicProcedure
+    .input(z.object({ tableId: z.string(), searchQuery: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const { tableId, searchQuery } = input;
+
+      const highlightedCells = await ctx.db.cell.findMany({
+        where: {
+          tableId,
+          value: {
+            contains: searchQuery,
+            mode: "insensitive",
+          },
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      return highlightedCells.map((cell) => cell.id);
+    }),
+
   addColumn: protectedProcedure
     .input(
       z.object({

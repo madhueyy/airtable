@@ -259,34 +259,23 @@ function Table({ tableId }: { tableId: string }) {
     }));
   };
 
+  const { data: highlightedCellIds } = api.table.getHighlightedCells.useQuery(
+    { tableId, searchQuery: searchInput },
+    { enabled: !!searchInput },
+  );
+
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchInput(e.target.value);
   };
 
-  const highlightCells = (search: string) => {
-    const matchingCells = new Set<string>();
-
-    data?.forEach((col) => {
-      col.cells.forEach((cell) => {
-        if (
-          cell.value.toLocaleLowerCase().includes(search.toLocaleLowerCase())
-        ) {
-          matchingCells.add(cell.id);
-        }
-      });
-    });
-
-    setHighlightedCells(matchingCells);
-  };
-
   useEffect(() => {
-    highlightCells(searchInput);
-  }, [searchInput, data]);
+    setHighlightedCells(new Set(highlightedCellIds || []));
+  }, [highlightedCellIds]);
 
   return (
     <div className="flex flex-col">
       {/* Searching and sorting buttons */}
-      <div className="flex flex-row items-center justify-center gap-x-4 border-b border-gray-300 bg-white px-4 py-2">
+      <div className="flex flex-row items-center justify-end gap-x-4 border-b border-gray-300 bg-white px-4 py-2">
         <div className="flex items-center gap-x-2 rounded-full border border-gray-300 px-4 py-1">
           <IoIosSearch className="text-gray-400" />
           <input
