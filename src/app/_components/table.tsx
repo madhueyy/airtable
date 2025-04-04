@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { api } from "~/trpc/react";
 import { FaPlus } from "react-icons/fa6";
 import { IoIosArrowDown } from "react-icons/io";
@@ -6,7 +6,6 @@ import Dropdown from "./dropdown";
 import { MdNumbers } from "react-icons/md";
 import { BsAlphabetUppercase } from "react-icons/bs";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { IoIosSearch } from "react-icons/io";
 import {
   addColumn,
   handleCellChange,
@@ -14,16 +13,7 @@ import {
   addRow,
   addRows,
 } from "./tableHelperFunctions";
-import { GiHamburgerMenu } from "react-icons/gi";
-import { PiGridNineThin } from "react-icons/pi";
-import { HiOutlineUserGroup } from "react-icons/hi2";
-import { BiHide } from "react-icons/bi";
-import { IoFilter } from "react-icons/io5";
-import { BsCardList } from "react-icons/bs";
-import { PiArrowsDownUp } from "react-icons/pi";
-import { IoColorFillOutline } from "react-icons/io5";
-import { CgFormatLineHeight } from "react-icons/cg";
-import { GrShare } from "react-icons/gr";
+import TableTopBar from "./tableTopBar";
 
 type Column = {
   tableId: string;
@@ -47,6 +37,9 @@ function Table({ tableId }: { tableId: string }) {
   const [dropdownOpen, setDropdownOpen] = useState<Record<string, boolean>>({});
   const [searchInput, setSearchInput] = useState("");
   const [highlightedCells, setHighlightedCells] = useState(new Set());
+  const [currHighlightIndex, setCurrHighlightIndex] = useState(0);
+  const highlightedCellsArrayRef = useRef<string[]>([]);
+  const cellRefs = useRef<Record<string, HTMLTableCellElement | null>>({});
 
   const { data: table, error } = api.table.getTable.useQuery({ tableId });
   const createColumn = api.table.addColumn.useMutation();
@@ -106,91 +99,69 @@ function Table({ tableId }: { tableId: string }) {
     { enabled: !!searchInput },
   );
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchInput(e.target.value);
+  useEffect(() => {
+    if (highlightedCellIds && highlightedCellIds.length > 0) {
+      setHighlightedCells(new Set(highlightedCellIds));
+      highlightedCellsArrayRef.current = highlightedCellIds;
+      setCurrHighlightIndex(0);
+    } else {
+      setHighlightedCells(new Set());
+      highlightedCellsArrayRef.current = [];
+      setCurrHighlightIndex(0);
+    }
+  }, [highlightedCellIds]);
+
+  const navToNextHighlight = () => {
+    if (highlightedCellsArrayRef.current.length > 0) {
+      const newIndex =
+        (currHighlightIndex + 1) % highlightedCellsArrayRef.current.length;
+      setCurrHighlightIndex(newIndex);
+      scrollToHighlightedCell(newIndex);
+    }
   };
 
-  useEffect(() => {
-    setHighlightedCells(new Set(highlightedCellIds ?? []));
-  }, [highlightedCellIds]);
+  const navToPrevHighlight = () => {
+    if (highlightedCellsArrayRef.current.length > 0) {
+      const newIndex =
+        (currHighlightIndex - 1 + highlightedCellsArrayRef.current.length) %
+        highlightedCellsArrayRef.current.length;
+      setCurrHighlightIndex(newIndex);
+      scrollToHighlightedCell(newIndex);
+    }
+  };
+
+  const scrollToHighlightedCell = (index: number) => {
+    const cellId = highlightedCellsArrayRef.current[index];
+    const cellElem = cellRefs.current[cellId ?? 0];
+
+    if (cellElem) {
+      cellElem.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+  };
 
   return (
     <div className="flex flex-col">
-      {/* Searching and sorting buttons */}
-      <div className="flex flex-row items-center justify-between gap-x-4 bg-white px-4 py-2">
-        {/* Filter, sort, view etc. buttons */}
-        <div className="flex flex-row items-center gap-x-2">
-          <div className="flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 text-sm font-medium hover:bg-gray-100">
-            <GiHamburgerMenu className="text-gray-500" />
-            <p>Views</p>
-          </div>
-
-          <div className="mx-2 h-[18px] w-[1px] bg-black/30"></div>
-
-          <div className="flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 font-medium hover:bg-gray-100">
-            <PiGridNineThin className="text-xl text-blue-500" />
-            <p className="text-sm">Grid view</p>
-            <HiOutlineUserGroup />
-            <IoIosArrowDown />
-          </div>
-
-          <div className="flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 text-sm font-medium hover:bg-gray-100">
-            <BiHide className="text-gray-600" />
-            <p>Hide Fields</p>
-          </div>
-
-          <div className="flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 text-sm font-medium hover:bg-gray-100">
-            <IoFilter className="text-gray-500" />
-            <p>Filter</p>
-          </div>
-
-          <div className="flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 text-sm font-medium hover:bg-gray-100">
-            <BsCardList className="text-gray-600" />
-            <p>Group</p>
-          </div>
-
-          <div className="flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 text-sm font-medium hover:bg-gray-100">
-            <PiArrowsDownUp className="text-gray-600" />
-            <p>Sort</p>
-          </div>
-
-          <div className="flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 text-sm font-medium hover:bg-gray-100">
-            <IoColorFillOutline className="text-gray-600" />
-            <p>Colour</p>
-          </div>
-
-          <div className="flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 font-medium hover:bg-gray-100">
-            <CgFormatLineHeight className="text-gray-600" />
-          </div>
-
-          <div className="flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 font-medium hover:bg-gray-100">
-            <GrShare className="text-xs text-gray-600" />
-            <p className="text-sm">Share and Sync</p>
-          </div>
-        </div>
-
-        {/* Search */}
-        <div className="mr-2 flex items-center gap-x-2 rounded-full border border-gray-300 px-4 py-1">
-          <IoIosSearch className="text-gray-400" />
-          <input
-            type="text"
-            value={searchInput}
-            placeholder="Search here..."
-            onChange={handleSearchChange}
-          ></input>
-        </div>
-      </div>
-
+      <TableTopBar
+        searchInput={searchInput}
+        setSearchInput={setSearchInput}
+        highlightedCellsCount={highlightedCellsArrayRef.current.length}
+        currHighlightIndex={currHighlightIndex}
+        onNextHighlight={navToNextHighlight}
+        onPrevHighlight={navToPrevHighlight}
+      />
       {/* The table */}
       <div ref={parentRef} className="max-h-[74vh] overflow-auto">
         <table>
           {/* Each column's headings */}
-          <thead className="sticky top-0 border border-gray-300 bg-[#f4f4f4]">
+          <thead className="sticky top-0 bg-[#f4f4f4]">
             <tr>
               {data?.map((col, index) => (
                 <th
                   key={index}
-                  className="border border-gray-300 py-2 font-normal"
+                  className="border-b border-gray-300 py-2 font-normal"
                 >
                   {/* Column heading name, type and drop down arrow */}
                   <div
@@ -257,10 +228,22 @@ function Table({ tableId }: { tableId: string }) {
                       (cell) => cell.rowNum === rowIndex + 1,
                     );
 
+                    const isHighlighted = highlightedCells.has(cell?.id);
+                    const isCurrHighlight =
+                      isHighlighted &&
+                      highlightedCellsArrayRef.current[currHighlightIndex] ===
+                        cell?.id;
+
                     return (
                       <td
                         key={col.id}
-                        className={`border border-gray-300 ${searchInput && highlightedCells.has(cell?.id) ? "bg-yellow-200" : "bg-white/75"}`}
+                        ref={(elem) => {
+                          if (isHighlighted) {
+                            const cellId = cell?.id ?? 0;
+                            cellRefs.current[cellId] = elem;
+                          }
+                        }}
+                        className={`border border-gray-300 ${isCurrHighlight ? "bg-yellow-200" : isHighlighted ? "bg-yellow-100" : "bg-white/75"}`}
                       >
                         <input
                           type={col.columnType}
