@@ -152,12 +152,12 @@ function Page() {
           <button className="flex h-8 w-8 items-center justify-center rounded-full bg-white">
             <GoBell />
           </button>
-          {session?.user.image && (
-            <img
-              src={session?.user.image}
-              alt="User's profile picture"
-              className="w-8 rounded-full border border-white"
-            ></img>
+          {session?.user.name && (
+            <div className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-white bg-purple-500">
+              <p className="text-lg text-white">
+                {session?.user.name?.slice(0, 1)}
+              </p>
+            </div>
           )}
         </div>
       </div>

@@ -35,6 +35,7 @@ type Cell = {
 function Table({ tableId }: { tableId: string }) {
   const [data, setData] = useState<Column[] | undefined>([]);
   const [dropdownOpen, setDropdownOpen] = useState<Record<string, boolean>>({});
+  const [searchIsOpen, setSearchIsOpen] = useState(false);
   const [searchInput, setSearchInput] = useState("");
   const [highlightedCells, setHighlightedCells] = useState(new Set());
   const [currHighlightIndex, setCurrHighlightIndex] = useState(0);
@@ -100,16 +101,24 @@ function Table({ tableId }: { tableId: string }) {
   );
 
   useEffect(() => {
-    if (highlightedCellIds && highlightedCellIds.length > 0) {
+    if (searchIsOpen && highlightedCellIds && highlightedCellIds.length > 0) {
       setHighlightedCells(new Set(highlightedCellIds));
       highlightedCellsArrayRef.current = highlightedCellIds;
       setCurrHighlightIndex(0);
-    } else {
+    } else if (!searchIsOpen) {
       setHighlightedCells(new Set());
       highlightedCellsArrayRef.current = [];
       setCurrHighlightIndex(0);
     }
   }, [highlightedCellIds]);
+
+  const handleSearchClose = () => {
+    setSearchIsOpen(false);
+    setHighlightedCells(new Set());
+    highlightedCellsArrayRef.current = [];
+    setCurrHighlightIndex(0);
+    setSearchInput("");
+  };
 
   const navToNextHighlight = () => {
     if (highlightedCellsArrayRef.current.length > 0) {
@@ -145,12 +154,15 @@ function Table({ tableId }: { tableId: string }) {
   return (
     <div className="flex flex-col">
       <TableTopBar
+        searchIsOpen={searchIsOpen}
+        setSearchIsOpen={setSearchIsOpen}
         searchInput={searchInput}
         setSearchInput={setSearchInput}
         highlightedCellsCount={highlightedCellsArrayRef.current.length}
         currHighlightIndex={currHighlightIndex}
         onNextHighlight={navToNextHighlight}
         onPrevHighlight={navToPrevHighlight}
+        onCloseSearch={handleSearchClose}
       />
       {/* The table */}
       <div ref={parentRef} className="max-h-[74vh] overflow-auto">
@@ -199,7 +211,7 @@ function Table({ tableId }: { tableId: string }) {
                 className="cursor-pointer border border-gray-300 px-8 hover:bg-gray-100"
                 onClick={addColumnFn}
               >
-                <button className="flex cursor-pointer items-center text-black">
+                <button className="flex cursor-pointer items-center text-gray-500">
                   <FaPlus />
                 </button>
               </th>
@@ -274,7 +286,7 @@ function Table({ tableId }: { tableId: string }) {
                 className="cursor-pointer border border-gray-300 py-2 pl-2 hover:bg-gray-200"
                 onClick={addRowFn}
               >
-                <button className="flex cursor-pointer items-center text-black">
+                <button className="flex cursor-pointer items-center text-gray-500">
                   <FaPlus />
                 </button>
               </td>

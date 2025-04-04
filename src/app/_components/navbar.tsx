@@ -32,12 +32,10 @@ function Navbar({
             <GoBell />
           </button>
 
-          {userImage && (
-            <img
-              src={userImage}
-              alt="User's profile picture"
-              className="w-8 rounded-full"
-            ></img>
+          {userName && (
+            <div className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-purple-500">
+              <p className="text-lg text-white">{userName.slice(0, 1)}</p>
+            </div>
           )}
 
           <button

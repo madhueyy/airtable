@@ -1,4 +1,6 @@
 import React from "react";
+import { MdNumbers } from "react-icons/md";
+import { BsAlphabetUppercase } from "react-icons/bs";
 
 function Dropdown({
   columnId,
@@ -8,23 +10,25 @@ function Dropdown({
   onColumnTypeChange: (columnId: string, newType: string) => void;
 }) {
   return (
-    <div className="absolute z-1 mt-2 cursor-pointer border-gray-300 bg-white shadow-sm">
-      <ul className="text-md border border-gray-300 text-gray-700">
+    <div className="absolute z-1 mt-2 ml-4 w-70 cursor-pointer rounded-md border border-gray-300 bg-white shadow-sm">
+      <ul className="text-md px-2 py-2 text-gray-700">
         <li>
           <p
-            className="border-b border-gray-300 px-19 py-2 text-black hover:bg-blue-100"
+            className="flex flex-row items-center gap-x-2 rounded px-2 py-1 text-gray-700 hover:bg-blue-100"
             onClick={() => onColumnTypeChange(columnId, "TEXT")}
           >
+            <BsAlphabetUppercase />
             Text
           </p>
         </li>
         <li>
-          <p
-            className="px-19 py-2 text-black hover:bg-blue-100"
+          <div
+            className="flex flex-row items-center gap-x-2 rounded px-2 py-1 text-gray-700 hover:bg-blue-100"
             onClick={() => onColumnTypeChange(columnId, "NUMBER")}
           >
+            <MdNumbers />
             Number
-          </p>
+          </div>
         </li>
       </ul>
     </div>

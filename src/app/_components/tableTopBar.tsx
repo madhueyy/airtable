@@ -16,23 +16,44 @@ import { RxCross2 } from "react-icons/rx";
 
 /* Searching and sorting buttons */
 function TableTopBar({
+  searchIsOpen,
+  setSearchIsOpen,
   searchInput,
   setSearchInput,
   highlightedCellsCount = 0,
   currHighlightIndex = 0,
   onNextHighlight,
   onPrevHighlight,
+  onCloseSearch,
 }: {
+  searchIsOpen: boolean;
+  setSearchIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
   searchInput: string;
   setSearchInput: React.Dispatch<React.SetStateAction<string>>;
   highlightedCellsCount?: number;
   currHighlightIndex?: number;
   onNextHighlight?: () => void;
   onPrevHighlight?: () => void;
+  onCloseSearch?: () => void;
 }) {
-  const [searchIsOpen, setSearchIsOpen] = useState(false);
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchInput(e.target.value);
+  };
+
+  const handleSearchToggle = () => {
+    if (searchIsOpen && onCloseSearch) {
+      onCloseSearch();
+    } else {
+      setSearchIsOpen(!searchIsOpen);
+    }
+  };
+
+  const handleCloseSearch = () => {
+    if (onCloseSearch) {
+      onCloseSearch();
+    } else {
+      setSearchIsOpen(false);
+    }
   };
 
   return (
@@ -92,7 +113,7 @@ function TableTopBar({
       <IoIosSearch
         className="mr-4 cursor-pointer text-gray-500"
         size={20}
-        onClick={() => setSearchIsOpen((prev) => !prev)}
+        onClick={handleSearchToggle}
       />
 
       {searchIsOpen && (
@@ -113,23 +134,26 @@ function TableTopBar({
               </p>
               <div className="flex flex-row">
                 <IoIosArrowDown
-                  className="cursor-pointer rounded-xs bg-gray-300 p-1"
+                  className="cursor-pointer rounded-xs bg-gray-300 p-1 hover:bg-gray-200"
                   onClick={onNextHighlight}
                 />
                 <IoIosArrowUp
-                  className="cursor-pointer rounded-xs bg-gray-300 p-1"
+                  className="cursor-pointer rounded-xs bg-gray-300 p-1 hover:bg-gray-200"
                   onClick={onPrevHighlight}
                 />
               </div>
               <RxCross2
-                className="cursor-pointer text-gray-400"
-                onClick={() => setSearchIsOpen(false)}
+                className="cursor-pointer text-gray-400 hover:text-black"
+                onClick={handleCloseSearch}
               />
             </div>
           </div>
 
           <div className="flex h-10 items-center bg-[#f2f2f2] px-2">
-            <p className="text-sm text-gray-600">ok</p>
+            <p className="text-xs text-gray-600">
+              Found <span className="font-bold">{highlightedCellsCount}</span>{" "}
+              cells
+            </p>
           </div>
         </div>
       )}
