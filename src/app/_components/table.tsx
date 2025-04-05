@@ -1,23 +1,27 @@
 import React, { useEffect, useState, useRef } from "react";
 import { api } from "~/trpc/react";
+import {
+  useReactTable,
+  getCoreRowModel,
+  createColumnHelper,
+  flexRender,
+  getFilteredRowModel,
+} from "@tanstack/react-table";
+import type { ColumnDef, Row } from "@tanstack/react-table";
 import { FaPlus } from "react-icons/fa6";
 import { IoIosArrowDown } from "react-icons/io";
 import Dropdown from "./dropdown";
 import { MdNumbers } from "react-icons/md";
 import { BsAlphabetUppercase } from "react-icons/bs";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import {
-  addColumn,
-  handleCellChange,
-  handleColumnTypeChange,
-  addRow,
-  addRows,
-} from "./tableHelperFunctions";
+import { handleCellChange, addRow, addRows } from "./tableHelperFunctions";
 import TableTopBar from "./tableTopBar";
+import ColumnDropdown from "./columnDropdown";
 
 type Column = {
   tableId: string;
   id: string;
+  name: string;
   columnNum: number;
   columnType: string;
   cells: Cell[];
@@ -32,13 +36,21 @@ type Cell = {
   columnNum: number;
 };
 
+type TableRow = Record<string, string>;
+
 function Table({ tableId }: { tableId: string }) {
   const [data, setData] = useState<Column[] | undefined>([]);
-  const [dropdownOpen, setDropdownOpen] = useState<Record<string, boolean>>({});
+  const [tableData, setTableData] = useState<TableRow[]>([]);
+  const [tableCols, setTableCols] = useState<ColumnDef<TableRow, any>[]>([]);
+  const [editDropdownOpen, setEditDropdownOpen] = useState<
+    Record<string, boolean>
+  >({});
   const [searchIsOpen, setSearchIsOpen] = useState(false);
   const [searchInput, setSearchInput] = useState("");
   const [highlightedCells, setHighlightedCells] = useState(new Set());
   const [currHighlightIndex, setCurrHighlightIndex] = useState(0);
+  const [columnDropdownOpen, setColumnDropdownOpen] = useState(false);
+
   const highlightedCellsArrayRef = useRef<string[]>([]);
   const cellRefs = useRef<Record<string, HTMLTableCellElement | null>>({});
 
@@ -46,7 +58,6 @@ function Table({ tableId }: { tableId: string }) {
   const createColumn = api.table.addColumn.useMutation();
   const createRow = api.table.addRow.useMutation();
   const updateCellValue = api.table.updateCellValue.useMutation();
-  const updateColumnType = api.table.updateColumnType.useMutation();
 
   const parentRef = React.useRef(null);
 
@@ -74,22 +85,12 @@ function Table({ tableId }: { tableId: string }) {
 
   const handleCellChangeFn = (cellId: string, value: string) =>
     handleCellChange(cellId, value, data, setData, tableId, updateCellValue);
-  const handleColumnTypeChangeFn = (columnId: string, newType: string) =>
-    handleColumnTypeChange(
-      columnId,
-      newType,
-      setData,
-      setDropdownOpen,
-      tableId,
-      updateColumnType,
-    );
-  const addColumnFn = () =>
-    addColumn(table, data, setData, tableId, createColumn);
+
   const addRowFn = () => addRow(table, data, setData, tableId, createRow);
   const addRowsFn = () => addRows(data, setData, tableId, createRow);
 
   const openDropdown = (columnId: string) => {
-    setDropdownOpen((prevState) => ({
+    setEditDropdownOpen((prevState) => ({
       ...prevState,
       [columnId]: !prevState[columnId],
     }));
@@ -164,6 +165,7 @@ function Table({ tableId }: { tableId: string }) {
         onPrevHighlight={navToPrevHighlight}
         onCloseSearch={handleSearchClose}
       />
+
       {/* The table */}
       <div ref={parentRef} className="max-h-[74vh] overflow-auto">
         <table>
@@ -187,7 +189,7 @@ function Table({ tableId }: { tableId: string }) {
                       {col.columnType === "NUMBER" && (
                         <MdNumbers className="text-gray-500" />
                       )}
-                      Column {col.columnNum}
+                      {col.name}
                     </div>
 
                     <IoIosArrowDown
@@ -197,10 +199,21 @@ function Table({ tableId }: { tableId: string }) {
                   </div>
 
                   {/* Dropdown menu for column type */}
-                  {dropdownOpen[col.id] && (
+                  {editDropdownOpen[col.id] && (
                     <Dropdown
-                      onColumnTypeChange={handleColumnTypeChangeFn}
                       columnId={col.id}
+                      columnName={col.name}
+                      columnType={col.columnType}
+                      setData={setData}
+                      tableId={tableId}
+                      closeDropdown={() =>
+                        setEditDropdownOpen((prev) => ({
+                          ...prev,
+                          [col.id]: false,
+                        }))
+                      }
+
+                      // onColumnHide={handleColumnHideFn}
                     />
                   )}
                 </th>
@@ -209,11 +222,24 @@ function Table({ tableId }: { tableId: string }) {
               {/* Add column button */}
               <th
                 className="cursor-pointer border border-gray-300 px-8 hover:bg-gray-100"
-                onClick={addColumnFn}
+                onClick={() => setColumnDropdownOpen(true)}
               >
                 <button className="flex cursor-pointer items-center text-gray-500">
                   <FaPlus />
                 </button>
+              </th>
+
+              <th>
+                {columnDropdownOpen && (
+                  <ColumnDropdown
+                    setColumnDropdownOpen={setColumnDropdownOpen}
+                    table={table}
+                    data={data}
+                    setData={setData}
+                    tableId={tableId}
+                    createColumn={createColumn}
+                  />
+                )}
               </th>
             </tr>
           </thead>

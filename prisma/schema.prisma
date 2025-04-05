@@ -101,6 +101,7 @@ model Table {
 
 model Column {
     id          String      @id @default(cuid())
+    name        String      @default("Name")
     columnNum   Int
     columnType  ColumnType
 

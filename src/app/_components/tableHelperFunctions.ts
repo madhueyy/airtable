@@ -7,6 +7,7 @@ type Table = {
 type Column = {
   tableId: string;
   id: string;
+  name: string;
   columnNum: number;
   columnType: string;
   cells: Cell[];
@@ -68,37 +69,33 @@ export const handleCellChange = async (
 
 // Updates column type in data, closes column type drop down and
 // sends request to update column type to database
-export const handleColumnTypeChange = async (
+export const handleColumnEdit = async (
   columnId: string,
   newType: string,
+  newName: string,
   setData: React.Dispatch<React.SetStateAction<Column[] | undefined>>,
-  setDropdownOpen: React.Dispatch<
-    React.SetStateAction<Record<string, boolean>>
-  >,
   tableId: string,
   /* eslint-disable */
-  updateColumnType: any,
+  updateColumn: any,
 ) => {
-  // Change column type in data
+  // Change column type and name in data
   setData((prevData) => {
     if (!prevData) return prevData;
 
     return prevData.map((column) =>
-      column.id === columnId ? { ...column, columnType: newType } : column,
+      column.id === columnId
+        ? { ...column, name: newName, columnType: newType }
+        : column,
     );
   });
 
-  setDropdownOpen((prevState) => ({
-    ...prevState,
-    [columnId]: false,
-  }));
-
   // Send request to db
   try {
-    await updateColumnType.mutateAsync({
+    await updateColumn.mutateAsync({
       tableId: tableId,
       columnId: columnId,
       newType: newType as "TEXT" | "NUMBER",
+      newName: newName,
     });
   } catch (error) {
     console.log(error);
@@ -114,6 +111,8 @@ export const addColumn = async (
   tableId: string,
   /* eslint-disable */
   createColumn: any,
+  columnName: string,
+  columnType: string,
 ) => {
   if (!table) {
     return;
@@ -126,8 +125,9 @@ export const addColumn = async (
   const newColumn = {
     tableId: tableId,
     id: newColumnId,
+    name: columnName,
     columnNum: colLength + 1,
-    columnType: "TEXT",
+    columnType: columnType,
     cells: Array.from({ length: rowLength }, (_, i) => ({
       id: nanoid(),
       rowNum: i + 1,
@@ -145,8 +145,9 @@ export const addColumn = async (
     await createColumn.mutateAsync({
       tableId: tableId,
       id: newColumn.id,
+      name: columnName,
       columnNum: newColumn.columnNum,
-      columnType: "TEXT",
+      columnType: columnType,
       cells: newColumn.cells,
     });
   } catch (error) {

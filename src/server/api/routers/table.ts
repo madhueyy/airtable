@@ -34,6 +34,7 @@ export const tableRouter = createTRPCRouter({
             create: [
               {
                 id: columnId1,
+                name: "Name",
                 columnNum: 1,
                 columnType: "TEXT",
                 cells: {
@@ -88,6 +89,9 @@ export const tableRouter = createTRPCRouter({
         where: { id: tableId },
         include: {
           columns: {
+            orderBy: {
+              columnNum: "asc",
+            },
             include: {
               cells: true,
             },
@@ -124,6 +128,7 @@ export const tableRouter = createTRPCRouter({
       z.object({
         tableId: z.string(),
         id: z.string(),
+        name: z.string(),
         columnNum: z.number(),
         columnType: z.nativeEnum(ColumnType),
         cells: z.array(
@@ -139,6 +144,7 @@ export const tableRouter = createTRPCRouter({
         data: {
           id: input.id,
           tableId: input.tableId,
+          name: input.name,
           columnNum: input.columnNum,
           columnType: input.columnType,
           cells: {
@@ -229,12 +235,13 @@ export const tableRouter = createTRPCRouter({
       return updatedCell;
     }),
 
-  updateColumnType: protectedProcedure
+  editColumn: protectedProcedure
     .input(
       z.object({
         tableId: z.string(),
         columnId: z.string(),
         newType: z.nativeEnum(ColumnType),
+        newName: z.string(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -243,6 +250,7 @@ export const tableRouter = createTRPCRouter({
           id: input.columnId,
         },
         data: {
+          name: input.newName,
           columnType: input.newType,
         },
       });
@@ -274,6 +282,20 @@ export const tableRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       await ctx.db.table.delete({
+        where: { id: input.id },
+      });
+
+      return { success: true };
+    }),
+
+  deleteColumn: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db.column.delete({
         where: { id: input.id },
       });
 
