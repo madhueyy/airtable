@@ -8,6 +8,10 @@ import { BiHide } from "react-icons/bi";
 import { api } from "~/trpc/react";
 import { handleColumnEdit } from "./tableHelperFunctions";
 
+type Table = {
+  columns: Column[];
+};
+
 type Column = {
   tableId: string;
   id: string;
@@ -30,20 +34,22 @@ function Dropdown({
   columnId,
   columnName,
   columnType,
-  setData,
   tableId,
   closeDropdown,
-
-  // onColumnHide,
+  refetch,
+  toggleColumnVisibility,
+  toggleColumnSort,
+  isSorted,
 }: {
   columnId: string;
   columnName: string;
   columnType: string;
-  setData: React.Dispatch<React.SetStateAction<Column[] | undefined>>;
   tableId: string;
   closeDropdown: () => void;
-
-  // onColumnHide: (columnId: string, newType: string) => void;
+  refetch: () => void;
+  toggleColumnVisibility: any;
+  toggleColumnSort: any;
+  isSorted: false | "asc" | "desc";
 }) {
   const [newColumnName, setNewColumnName] = useState(columnName);
   const [selectedType, setSelectedType] = useState(columnType);
@@ -52,7 +58,7 @@ function Dropdown({
   const updateColumn = api.table.editColumn.useMutation();
   const deleteColumn = api.table.deleteColumn.useMutation();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!newColumnName.trim() || !selectedType) {
@@ -64,14 +70,15 @@ function Dropdown({
       columnId,
       selectedType,
       newColumnName,
-      setData,
       tableId,
       updateColumn,
     );
 
-    setError("");
-
     closeDropdown();
+
+    await refetch();
+
+    setError("");
   };
 
   const handleDeleteColumn = async (e: React.MouseEvent) => {
@@ -79,10 +86,27 @@ function Dropdown({
 
     await deleteColumn.mutateAsync({ id: columnId });
 
-    setData((prevColumns) =>
-      prevColumns?.filter((column) => column.id !== columnId),
-    );
+    closeDropdown();
+
+    await refetch();
+
+    // setData((prevColumns) =>
+    //   prevColumns?.filter((column) => column.id !== columnId),
+    // );
   };
+
+  const handleSortClick =
+    (direction: "asc" | "desc") => (e: React.MouseEvent) => {
+      e.preventDefault();
+
+      if (isSorted === direction) {
+        toggleColumnSort(null);
+      } else {
+        toggleColumnSort(direction);
+      }
+
+      closeDropdown();
+    };
 
   return (
     <form
@@ -126,21 +150,39 @@ function Dropdown({
 
       {error && <p className="px-4 pb-2 text-sm text-red-500">{error}</p>}
 
+      {/* For sorting columns */}
       <hr className="mx-2 pt-1 text-gray-300"></hr>
       <div className="flex w-full flex-col items-start px-2 py-2">
-        <button className="flex w-full cursor-pointer items-center gap-x-2 rounded-sm px-2 py-1 hover:bg-gray-100">
+        <button
+          className={`flex w-full cursor-pointer items-center gap-x-2 rounded-sm px-2 py-1 hover:bg-gray-100 ${
+            isSorted === "asc" ? "bg-blue-200" : ""
+          }`}
+          onClick={handleSortClick("asc")}
+        >
           <PiSortAscending />
           {columnType === "TEXT" ? <p>Sort A → Z</p> : <p>Sort 1 → 9</p>}
         </button>
-        <button className="flex w-full cursor-pointer items-center gap-x-2 rounded-sm px-2 py-1 hover:bg-gray-100">
+        <button
+          className={`flex w-full cursor-pointer items-center gap-x-2 rounded-sm px-2 py-1 hover:bg-gray-100 ${
+            isSorted === "desc" ? "bg-blue-200" : ""
+          }`}
+          onClick={handleSortClick("desc")}
+        >
           <PiSortDescending />
           {columnType === "TEXT" ? <p>Sort Z → A</p> : <p>Sort 9 → 1</p>}
         </button>
       </div>
       <hr className="mx-2 pt-1 text-gray-300"></hr>
 
+      {/* For hiding columns */}
       <div className="w-full px-2 pt-1">
-        <button className="flex w-full cursor-pointer items-center gap-x-2 rounded-sm px-2 py-1 hover:bg-gray-100">
+        <button
+          className="flex w-full cursor-pointer items-center gap-x-2 rounded-sm px-2 py-1 hover:bg-gray-100"
+          onClick={() => {
+            toggleColumnVisibility(columnId);
+            closeDropdown();
+          }}
+        >
           <BiHide />
           Hide field
         </button>

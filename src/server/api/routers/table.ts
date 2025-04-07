@@ -93,7 +93,11 @@ export const tableRouter = createTRPCRouter({
               columnNum: "asc",
             },
             include: {
-              cells: true,
+              cells: {
+                orderBy: {
+                  rowNum: "asc",
+                },
+              },
             },
           },
         },

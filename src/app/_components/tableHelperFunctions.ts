@@ -27,43 +27,43 @@ type Cell = {
 export const handleCellChange = async (
   cellId: string,
   value: string,
-  data: Column[] | undefined,
-  setData: React.Dispatch<React.SetStateAction<Column[] | undefined>>,
   tableId: string,
   /* eslint-disable */
   updateCellValue: any,
 ) => {
-  console.log(cellId, value);
+  console.log("cellId " + cellId + "value " + value);
+
+  if (!cellId || !value) {
+    return;
+  }
 
   // Change data in cells
-  setData((prevData) => {
-    if (!prevData) return prevData;
+  // setData((prevData) => {
+  //   if (!prevData) return prevData;
 
-    return prevData.map((column) => {
-      const updatedCells = column.cells.map((cell) =>
-        cell.id === cellId ? { ...cell, value } : cell,
-      );
+  //   return prevData.map((column) => {
+  //     const updatedCells = column.cells.map((cell) =>
+  //       cell.id === cellId ? { ...cell, value } : cell,
+  //     );
 
-      return { ...column, cells: updatedCells };
-    });
-  });
+  //     return { ...column, cells: updatedCells };
+  //   });
+  // });
 
-  const column = data?.find((col) =>
-    col.cells.some((cell) => cell.id === cellId),
-  );
-  const updatedCell = column?.cells.find((cell) => cell.id === cellId);
+  // const column = data?.find((col) =>
+  //   col.cells.some((cell) => cell.id === cellId),
+  // );
+  // const updatedCell = column?.cells.find((cell) => cell.id === cellId);
 
   // Send request to db
-  if (updatedCell) {
-    try {
-      await updateCellValue.mutateAsync({
-        tableId: tableId,
-        cellId: updatedCell.id,
-        value: updatedCell.value,
-      });
-    } catch (error) {
-      console.log(error);
-    }
+  try {
+    await updateCellValue.mutateAsync({
+      tableId: tableId,
+      cellId: cellId,
+      value: value,
+    });
+  } catch (error) {
+    console.log(error);
   }
 };
 
@@ -73,22 +73,10 @@ export const handleColumnEdit = async (
   columnId: string,
   newType: string,
   newName: string,
-  setData: React.Dispatch<React.SetStateAction<Column[] | undefined>>,
   tableId: string,
   /* eslint-disable */
   updateColumn: any,
 ) => {
-  // Change column type and name in data
-  setData((prevData) => {
-    if (!prevData) return prevData;
-
-    return prevData.map((column) =>
-      column.id === columnId
-        ? { ...column, name: newName, columnType: newType }
-        : column,
-    );
-  });
-
   // Send request to db
   try {
     await updateColumn.mutateAsync({
@@ -106,13 +94,14 @@ export const handleColumnEdit = async (
 // to database
 export const addColumn = async (
   table: Table | undefined | null,
-  data: Column[] | undefined,
-  setData: React.Dispatch<React.SetStateAction<Column[] | undefined>>,
+  data: any[] | undefined,
+  setData: React.Dispatch<React.SetStateAction<any[]>>,
   tableId: string,
   /* eslint-disable */
   createColumn: any,
   columnName: string,
   columnType: string,
+  setColumns: React.Dispatch<React.SetStateAction<any[]>>,
 ) => {
   if (!table) {
     return;
@@ -138,7 +127,26 @@ export const addColumn = async (
     })),
   };
 
-  setData((prev) => [...(prev ?? []), newColumn]);
+  // Update in UI
+  setData((prevRows) => {
+    return prevRows.map((row, index) => {
+      return {
+        ...row,
+        [columnName]: "",
+      };
+    });
+  });
+
+  setColumns((prevColumns) => [
+    ...prevColumns,
+    {
+      accessorKey: columnName,
+      header: columnName,
+      cell: (props: any) => props.getValue(),
+    },
+  ]);
+
+  console.log(data);
 
   // Send request to db
   try {
@@ -159,8 +167,7 @@ export const addColumn = async (
 // to database
 export const addRow = async (
   table: Table | undefined | null,
-  data: Column[] | undefined,
-  setData: React.Dispatch<React.SetStateAction<Column[] | undefined>>,
+  setData: React.Dispatch<React.SetStateAction<any[]>>,
   tableId: string,
   /* eslint-disable */
   createRow: any,
@@ -172,7 +179,7 @@ export const addRow = async (
 
   const newRowNum = table.columns[0]?.cells.length ?? 0;
 
-  const newCells = (data ?? []).map((col) => ({
+  const newCells = table.columns.map((col) => ({
     id: nanoid(),
     rowNum: newRowNum + 1,
     value: "",
@@ -181,16 +188,12 @@ export const addRow = async (
     columnNum: col.columnNum,
   }));
 
-  setData((prev) => {
-    return prev?.map((column) => {
-      const updatedCells = [
-        ...column?.cells,
-        newCells.find((cell) => cell.columnId === column.id)!,
-      ];
-
-      return { ...column, cells: updatedCells };
-    });
+  // Update in UI
+  const newRowObj: Record<string, string> = {};
+  table.columns.forEach((column) => {
+    newRowObj[column.name] = "";
   });
+  setData((prevData) => [...(prevData ?? []), newRowObj]);
 
   // Send request to db
   try {

@@ -11,6 +11,7 @@ import { IoIosArrowDown } from "react-icons/io";
 import { GoPeople } from "react-icons/go";
 import { GoBell } from "react-icons/go";
 import { useSession } from "next-auth/react";
+import TableComponent from "~/app/_components/TableComponent";
 
 type Table = {
   id: string;
@@ -231,7 +232,7 @@ function Page() {
       </div>
 
       <div className="h-[100vh] w-[100vw] bg-[#f7f7f7]">
-        {currTable && <Table tableId={currTable} />}
+        {currTable && <TableComponent tableId={currTable} />}
       </div>
     </div>
   );

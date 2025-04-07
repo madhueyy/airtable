@@ -13,6 +13,8 @@ import { CgFormatLineHeight } from "react-icons/cg";
 import { GrShare } from "react-icons/gr";
 import { IoIosArrowUp } from "react-icons/io";
 import { RxCross2 } from "react-icons/rx";
+import HiddenColumnsMenu from "./HiddenColumnsMenu";
+import FilterColumnsMenu from "./FilterColumnsMenu";
 
 /* Searching and sorting buttons */
 function TableTopBar({
@@ -25,6 +27,9 @@ function TableTopBar({
   onNextHighlight,
   onPrevHighlight,
   onCloseSearch,
+  table,
+  tableData,
+  onFilterChange,
 }: {
   searchIsOpen: boolean;
   setSearchIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -35,7 +40,13 @@ function TableTopBar({
   onNextHighlight?: () => void;
   onPrevHighlight?: () => void;
   onCloseSearch?: () => void;
+  table: any;
+  tableData: any;
+  onFilterChange: any;
 }) {
+  const [hiddenMenuOpen, setHiddenMenuOpen] = useState(false);
+  const [filterMenuOpen, setFilterMenuOpen] = useState(false);
+
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchInput(e.target.value);
   };
@@ -56,6 +67,12 @@ function TableTopBar({
     }
   };
 
+  // Get count of all columns that are hidden
+  const columnVisibility = table?.getState().columnVisibility || {};
+  const hiddenColumnsCount = Object.entries(columnVisibility).filter(
+    ([_, isVisible]) => isVisible === false,
+  ).length;
+
   return (
     <div className="flex flex-row items-center justify-between gap-x-4 bg-white px-4 py-2">
       {/* Filter, sort, view etc. buttons */}
@@ -74,14 +91,36 @@ function TableTopBar({
           <IoIosArrowDown />
         </div>
 
-        <div className="flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 text-sm font-medium hover:bg-gray-100">
+        {/* Hidden columns */}
+        <div
+          className={`flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 text-sm font-medium hover:bg-gray-100 ${hiddenColumnsCount > 0 ? "bg-blue-200" : ""}`}
+          onClick={() => setHiddenMenuOpen((prev) => !prev)}
+        >
           <BiHide className="text-gray-600" />
-          <p>Hide Fields</p>
+          {hiddenColumnsCount > 0 ? (
+            <p>{hiddenColumnsCount} hidden field(s)</p>
+          ) : (
+            <p>Hide Fields</p>
+          )}
+          {hiddenMenuOpen && (
+            <HiddenColumnsMenu table={table} tableData={tableData} />
+          )}
         </div>
 
-        <div className="flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 text-sm font-medium hover:bg-gray-100">
+        {/* Filter columns */}
+        <div
+          className="flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 text-sm font-medium hover:bg-gray-100"
+          onClick={() => setFilterMenuOpen((prev) => !prev)}
+        >
           <IoFilter className="text-gray-500" />
           <p>Filter</p>
+
+          {filterMenuOpen && (
+            <FilterColumnsMenu
+              tableData={tableData}
+              onFilterChange={onFilterChange}
+            />
+          )}
         </div>
 
         <div className="flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 text-sm font-medium hover:bg-gray-100">

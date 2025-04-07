@@ -32,14 +32,16 @@ function ColumnDropdown({
   setData,
   tableId,
   createColumn,
+  setColumns,
 }: {
   setColumnDropdownOpen: React.Dispatch<React.SetStateAction<boolean>>;
   table: Table | undefined | null;
-  data: Column[] | undefined;
-  setData: React.Dispatch<React.SetStateAction<Column[] | undefined>>;
+  data: any[] | undefined;
+  setData: React.Dispatch<React.SetStateAction<any[]>>;
   tableId: string;
   /* eslint-disable */
   createColumn: any;
+  setColumns: React.Dispatch<React.SetStateAction<any[]>>;
 }) {
   const [columnName, setColumnName] = useState("");
   const [selectedType, setSelectedType] = useState("");
@@ -63,6 +65,7 @@ function ColumnDropdown({
       createColumn,
       columnName,
       selectedType,
+      setColumns,
     );
 
     setColumnDropdownOpen(false);
