@@ -16,6 +16,7 @@ import { IoIosArrowUp } from "react-icons/io";
 import { RxCross2 } from "react-icons/rx";
 import HiddenColumnsMenu from "./HiddenColumnsMenu";
 import FilterColumnsMenu from "./FilterColumnsMenu";
+import ViewsSidebar from "./ViewsSidebar";
 
 /* Searching and sorting buttons */
 function TableTopBar({
@@ -48,6 +49,7 @@ function TableTopBar({
 }) {
   const [hiddenMenuOpen, setHiddenMenuOpen] = useState(false);
   const [filterMenuOpen, setFilterMenuOpen] = useState(false);
+  const [viewsMenuOpen, setViewsMenuOpen] = useState(false);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchInput(e.target.value);
@@ -79,7 +81,10 @@ function TableTopBar({
     <div className="flex flex-row items-center justify-between gap-x-4 bg-white px-4 py-2">
       {/* Filter, sort, view etc. buttons */}
       <div className="flex flex-row items-center gap-x-2">
-        <div className="flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 text-sm font-medium hover:bg-gray-100">
+        <div
+          className={`flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 text-sm font-medium hover:bg-gray-100 ${viewsMenuOpen ? "bg-gray-100" : ""}`}
+          onClick={() => setViewsMenuOpen((prev) => !prev)}
+        >
           <GiHamburgerMenu className="text-gray-500" />
           <p>Views</p>
         </div>
@@ -200,6 +205,8 @@ function TableTopBar({
           </div>
         </div>
       )}
+
+      {viewsMenuOpen && <ViewsSidebar />}
     </div>
   );
 }

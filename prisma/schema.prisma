@@ -97,6 +97,7 @@ model Table {
 
     columns     Column[]
     cells       Cell[]
+    views       View[]
 }
 
 model Column {
@@ -109,6 +110,9 @@ model Column {
     tableId     String
 
     cells       Cell[]
+    filters     Filter[]
+    sorts       Sort[]
+    hiddenInViews View[]    @relation("HiddenColumns")
 }
 
 enum ColumnType {
@@ -127,4 +131,55 @@ model Cell {
     column      Column      @relation(fields: [columnId], references: [id], onDelete: Cascade)
     columnId    String
     columnNum   Int
+}
+
+model View {
+    id          String      @id @default(cuid())
+    name        String
+
+    table       Table       @relation(fields: [tableId], references: [id], onDelete: Cascade)
+    tableId     String
+
+    filters     Filter[]
+    sorts       Sort[]
+    hiddenColumns Column[]  @relation("HiddenColumns")
+}
+
+model Filter {
+    id          String      @id @default(cuid())
+    column      Column      @relation(fields: [columnId], references: [id], onDelete: Cascade)
+    columnId    String
+
+    view        View        @relation(fields: [viewId], references: [id], onDelete: Cascade)
+    viewId      String
+
+    operator    FilterType
+    value       String
+}
+
+enum FilterType {
+    EQUALS
+    NOT_EQUALS
+    CONTAINS
+    NOT_CONTAINS
+    IS_EMPTY
+    IS_NOT_EMPTY
+    GT
+    LT
+}
+
+model Sort {
+  id          String      @id @default(cuid())
+  column      Column      @relation(fields: [columnId], references: [id], onDelete: Cascade)
+  columnId    String
+
+  view        View        @relation(fields: [viewId], references: [id], onDelete: Cascade)
+  viewId      String
+
+  direction   SortDirection
+}
+
+enum SortDirection {
+  ASC
+  DESC
 }
