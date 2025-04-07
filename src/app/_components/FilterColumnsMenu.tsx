@@ -52,7 +52,8 @@ function FilterColumnsMenu({
     "Select a field first",
   ]);
 
-  const handleSelectColumn = (selection: string) => {
+  const handleSelectColumn = (selection: string, e: React.FormEvent) => {
+    e.preventDefault();
     setSelectedColumn(selection);
 
     const selectedColumnObj = tableData.columns.find(
@@ -87,7 +88,7 @@ function FilterColumnsMenu({
           {/* Dropdown for column names */}
           <select
             value={selectedColumn}
-            onChange={(e) => handleSelectColumn(e.target.value)}
+            onChange={(e) => handleSelectColumn(e.target.value, e)}
             className="h-10 w-[70%] rounded-sm border border-gray-300 px-2"
           >
             <option value="">Select column</option>

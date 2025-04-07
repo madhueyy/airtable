@@ -110,12 +110,14 @@ function TableTopBar({
         </div>
 
         {/* Filter columns */}
-        <div
-          className="flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 text-sm font-medium hover:bg-gray-100"
-          onClick={() => setFilterMenuOpen((prev) => !prev)}
-        >
-          <IoFilter className="text-gray-500" />
-          <p>Filter</p>
+        <div className="flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 text-sm font-medium hover:bg-gray-100">
+          <div
+            className="flex flex-row items-center gap-x-2"
+            onClick={() => setFilterMenuOpen((prev) => !prev)}
+          >
+            <IoFilter className="text-gray-500" />
+            <p>Filter</p>
+          </div>
 
           {filterMenuOpen && (
             <FilterColumnsMenu
