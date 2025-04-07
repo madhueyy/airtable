@@ -171,6 +171,7 @@ export const addRow = async (
   tableId: string,
   /* eslint-disable */
   createRow: any,
+  refetch: () => void,
 ) => {
   console.log("ok");
   if (!table) {
@@ -188,39 +189,34 @@ export const addRow = async (
     columnNum: col.columnNum,
   }));
 
-  // Update in UI
-  const newRowObj: Record<string, string> = {};
-  table.columns.forEach((column) => {
-    newRowObj[column.name] = "";
-  });
-  setData((prevData) => [...(prevData ?? []), newRowObj]);
-
   // Send request to db
   try {
     await createRow.mutateAsync({
       tableId: tableId,
       cells: newCells,
     });
+
+    await refetch();
   } catch (error) {
     console.log(error);
   }
 };
 
 export const addRows = async (
-  data: Column[] | undefined,
-  setData: React.Dispatch<React.SetStateAction<Column[] | undefined>>,
+  table: Table | undefined | null,
   tableId: string,
   /* eslint-disable */
   createRow: any,
+  refetch: () => void,
 ) => {
   console.log("hello");
 
-  const currRowLength = data?.[0]?.cells.length ?? 0;
+  const currRowLength = table?.columns[0]?.cells.length ?? 0;
 
   const newCells = Array.from({ length: 100000 }).flatMap((_, rowIndex) => {
     const newRowNum = currRowLength + rowIndex + 1;
 
-    return data?.map((column) => ({
+    return table?.columns?.map((column) => ({
       id: nanoid(),
       rowNum: newRowNum,
       value: "",
@@ -228,18 +224,6 @@ export const addRows = async (
       columnId: column.id,
       columnNum: column.columnNum,
     }));
-  });
-
-  setData((prev) => {
-    return prev?.map((column) => {
-      const foundCell = newCells.find((cell) => cell?.columnId === column.id);
-
-      const updatedCells = foundCell
-        ? [...column?.cells, foundCell]
-        : [...column?.cells];
-
-      return { ...column, cells: updatedCells };
-    });
   });
 
   // Send request to db
@@ -251,4 +235,6 @@ export const addRows = async (
   } catch (error) {
     console.log(error);
   }
+
+  await refetch();
 };

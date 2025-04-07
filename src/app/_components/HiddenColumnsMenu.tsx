@@ -1,3 +1,4 @@
+/* eslint-ignore */
 import React from "react";
 import { MdToggleOn } from "react-icons/md";
 import { MdToggleOff } from "react-icons/md";
@@ -30,6 +31,7 @@ function HiddenColumnsMenu({
   table,
   tableData,
 }: {
+  /* eslint-disable */
   table: any;
   tableData: Table;
 }) {

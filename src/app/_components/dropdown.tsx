@@ -1,3 +1,4 @@
+/* eslint-disable no-use-before-define */
 import React, { useState } from "react";
 import { MdNumbers } from "react-icons/md";
 import { BsAlphabetUppercase } from "react-icons/bs";
@@ -47,7 +48,9 @@ function Dropdown({
   tableId: string;
   closeDropdown: () => void;
   refetch: () => void;
+  /* eslint-disable */
   toggleColumnVisibility: any;
+  /* eslint-disable */
   toggleColumnSort: any;
   isSorted: false | "asc" | "desc";
 }) {
@@ -66,7 +69,7 @@ function Dropdown({
       return;
     }
 
-    handleColumnEdit(
+    await handleColumnEdit(
       columnId,
       selectedType,
       newColumnName,

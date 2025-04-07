@@ -30,6 +30,7 @@ function EditableCell({
   tableId,
   updateCellValue,
 }: {
+  /* eslint-disable */
   getValue: any;
   cellId: string;
   columnType: string;

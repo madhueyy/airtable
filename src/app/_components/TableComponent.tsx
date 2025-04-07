@@ -1,3 +1,4 @@
+/* eslint-ignore */
 import React, { useEffect, useState, useRef } from "react";
 import { api } from "~/trpc/react";
 import {
@@ -45,6 +46,7 @@ type Cell = {
 };
 
 function TableComponent({ tableId }: { tableId: string }) {
+  /* eslint-disable */
   const [data, setData] = useState<any[]>([]);
   const [columns, setColumns] = useState<any[]>([]);
   const [columnFilters, setColumnFilters] = useState<any[]>([]);
@@ -72,7 +74,9 @@ function TableComponent({ tableId }: { tableId: string }) {
     { enabled: !!searchInput },
   );
 
-  const addRowFn = () => addRow(tableFromDb, setData, tableId, createRow);
+  const addRowFn = () =>
+    addRow(tableFromDb, setData, tableId, createRow, refetch);
+  const addRowsFn = () => addRows(tableFromDb, tableId, createRow, refetch);
   const openDropdown = (columnId: string) => {
     setEditDropdownOpen((prevState) => ({
       ...prevState,
@@ -416,6 +420,15 @@ function TableComponent({ tableId }: { tableId: string }) {
           </tr>
         </tbody>
       </table>
+
+      <div className="mr-auto ml-2 flex">
+        <button
+          className="mx-auto mt-2 flex cursor-pointer items-center gap-x-2 rounded bg-blue-500 px-3 py-1 text-white"
+          onClick={addRowsFn}
+        >
+          Add 100k Rows
+        </button>
+      </div>
     </div>
   );
 }

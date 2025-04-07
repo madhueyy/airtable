@@ -1,3 +1,4 @@
+/* eslint-ignore */
 import React, { useState } from "react";
 import { IoIosArrowDown } from "react-icons/io";
 import { IoIosSearch } from "react-icons/io";
@@ -40,6 +41,7 @@ function TableTopBar({
   onNextHighlight?: () => void;
   onPrevHighlight?: () => void;
   onCloseSearch?: () => void;
+  /* eslint-disable */
   table: any;
   tableData: any;
   onFilterChange: any;

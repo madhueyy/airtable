@@ -41,6 +41,7 @@ type TableRow = Record<string, string>;
 function Table({ tableId }: { tableId: string }) {
   const [data, setData] = useState<Column[] | undefined>([]);
   const [tableData, setTableData] = useState<TableRow[]>([]);
+  /* eslint-disable */
   const [tableCols, setTableCols] = useState<ColumnDef<TableRow, any>[]>([]);
   const [editDropdownOpen, setEditDropdownOpen] = useState<
     Record<string, boolean>

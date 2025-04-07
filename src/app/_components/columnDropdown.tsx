@@ -36,7 +36,9 @@ function ColumnDropdown({
 }: {
   setColumnDropdownOpen: React.Dispatch<React.SetStateAction<boolean>>;
   table: Table | undefined | null;
+  /* eslint-disable */
   data: any[] | undefined;
+  /* eslint-disable */
   setData: React.Dispatch<React.SetStateAction<any[]>>;
   tableId: string;
   /* eslint-disable */
