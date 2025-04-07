@@ -2,7 +2,6 @@
 
 import { useParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
-import Table from "~/app/_components/table";
 import { api } from "~/trpc/react";
 import { useRouter } from "next/navigation";
 import { MdEdit } from "react-icons/md";
