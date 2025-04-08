@@ -102,10 +102,14 @@ export const addColumn = async (
   columnName: string,
   columnType: string,
   setColumns: React.Dispatch<React.SetStateAction<any[]>>,
+  refetch: () => void,
+  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>,
 ) => {
   if (!table) {
     return;
   }
+
+  setIsLoading(true);
 
   const colLength = data?.length ?? 0;
   const newColumnId = nanoid();
@@ -127,24 +131,24 @@ export const addColumn = async (
     })),
   };
 
-  // Update in UI
-  setData((prevRows) => {
-    return prevRows.map((row, index) => {
-      return {
-        ...row,
-        [columnName]: "",
-      };
-    });
-  });
+  // Update in UI -- NOT WORKING PROPERLY (ONLY ADDS P INSTEAD OF INPUT)
+  // setData((prevRows) => {
+  //   return prevRows.map((row, index) => {
+  //     return {
+  //       ...row,
+  //       [columnName]: "",
+  //     };
+  //   });
+  // });
 
-  setColumns((prevColumns) => [
-    ...prevColumns,
-    {
-      accessorKey: columnName,
-      header: columnName,
-      cell: (props: any) => props.getValue(),
-    },
-  ]);
+  // setColumns((prevColumns) => [
+  //   ...prevColumns,
+  //   {
+  //     accessorKey: columnName,
+  //     header: columnName,
+  //     cell: (props: any) => props.getValue(),
+  //   },
+  // ]);
 
   console.log(data);
 
@@ -158,6 +162,10 @@ export const addColumn = async (
       columnType: columnType,
       cells: newColumn.cells,
     });
+
+    await refetch();
+
+    setIsLoading(false);
   } catch (error) {
     console.log(error);
   }
@@ -172,11 +180,14 @@ export const addRow = async (
   /* eslint-disable */
   createRow: any,
   refetch: () => void,
+  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>,
 ) => {
   console.log("ok");
   if (!table) {
     return;
   }
+
+  setIsLoading(true);
 
   const newRowNum = table.columns[0]?.cells.length ?? 0;
 
@@ -197,6 +208,8 @@ export const addRow = async (
     });
 
     await refetch();
+
+    setIsLoading(false);
   } catch (error) {
     console.log(error);
   }
@@ -208,8 +221,10 @@ export const addRows = async (
   /* eslint-disable */
   createRow: any,
   refetch: () => void,
+  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>,
 ) => {
   console.log("hello");
+  setIsLoading(true);
 
   const currRowLength = table?.columns[0]?.cells.length ?? 0;
 
@@ -232,9 +247,11 @@ export const addRows = async (
       tableId: tableId,
       cells: newCells.map(({ ...rest }) => rest),
     });
+
+    await refetch();
+
+    setIsLoading(false);
   } catch (error) {
     console.log(error);
   }
-
-  await refetch();
 };

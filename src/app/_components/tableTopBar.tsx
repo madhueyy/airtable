@@ -17,6 +17,7 @@ import { RxCross2 } from "react-icons/rx";
 import HiddenColumnsMenu from "./HiddenColumnsMenu";
 import FilterColumnsMenu from "./FilterColumnsMenu";
 import ViewsSidebar from "./ViewsSidebar";
+import Loading from "./Loading";
 
 /* Searching and sorting buttons */
 function TableTopBar({
@@ -32,6 +33,8 @@ function TableTopBar({
   table,
   tableData,
   onFilterChange,
+  isLoading,
+  setIsLoading,
 }: {
   searchIsOpen: boolean;
   setSearchIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -46,6 +49,8 @@ function TableTopBar({
   table: any;
   tableData: any;
   onFilterChange: any;
+  isLoading: boolean;
+  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   const [hiddenMenuOpen, setHiddenMenuOpen] = useState(false);
   const [filterMenuOpen, setFilterMenuOpen] = useState(false);
@@ -155,6 +160,8 @@ function TableTopBar({
           <GrShare className="text-xs text-gray-600" />
           <p className="text-sm">Share and Sync</p>
         </div>
+
+        {isLoading && <Loading />}
       </div>
 
       {/* Search */}

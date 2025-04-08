@@ -41,6 +41,8 @@ function Dropdown({
   toggleColumnVisibility,
   toggleColumnSort,
   isSorted,
+  isLoading,
+  setIsLoading,
 }: {
   columnId: string;
   columnName: string;
@@ -53,6 +55,8 @@ function Dropdown({
   /* eslint-disable */
   toggleColumnSort: any;
   isSorted: false | "asc" | "desc";
+  isLoading: boolean;
+  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   const [newColumnName, setNewColumnName] = useState(columnName);
   const [selectedType, setSelectedType] = useState(columnType);
@@ -69,6 +73,8 @@ function Dropdown({
       return;
     }
 
+    setIsLoading(true);
+
     await handleColumnEdit(
       columnId,
       selectedType,
@@ -81,17 +87,23 @@ function Dropdown({
 
     await refetch();
 
+    setIsLoading(false);
+
     setError("");
   };
 
   const handleDeleteColumn = async (e: React.MouseEvent) => {
     e.stopPropagation();
 
+    setIsLoading(true);
+
     await deleteColumn.mutateAsync({ id: columnId });
 
     closeDropdown();
 
     await refetch();
+
+    setIsLoading(false);
 
     // setData((prevColumns) =>
     //   prevColumns?.filter((column) => column.id !== columnId),
@@ -102,13 +114,30 @@ function Dropdown({
     (direction: "asc" | "desc") => (e: React.MouseEvent) => {
       e.preventDefault();
 
+      setIsLoading(true);
+
+      console.log("isSorted " + isSorted);
+
+      // 'none' -> 'desc' -> 'asc' -> 'none' -> 'desc' -> 'asc' -> ...
       if (isSorted === direction) {
-        toggleColumnSort(null);
-      } else {
+        toggleColumnSort(direction);
+        toggleColumnSort(direction);
+        toggleColumnSort(direction);
+      } else if (!isSorted && direction === "desc") {
+        toggleColumnSort(direction);
+      } else if (!isSorted && direction === "asc") {
+        toggleColumnSort(direction);
+        toggleColumnSort(direction);
+      } else if (isSorted === "asc" && direction === "desc") {
+        toggleColumnSort(direction);
+        toggleColumnSort(direction);
+      } else if (isSorted === "desc" && direction === "asc") {
         toggleColumnSort(direction);
       }
 
       closeDropdown();
+
+      setIsLoading(false);
     };
 
   return (
@@ -201,17 +230,20 @@ function Dropdown({
         </button>
       </div>
 
+      {/* Cancel and edit field buttons */}
       <div className="flex flex-row justify-end gap-x-4 px-2 py-2">
         <button
           type="button"
-          className="cursor-pointer rounded px-2 py-1 hover:bg-gray-200"
+          disabled={isLoading}
+          className="cursor-pointer rounded px-2 py-1 hover:bg-gray-200 disabled:cursor-auto disabled:hover:bg-white/0"
           onClick={closeDropdown}
         >
           Cancel
         </button>
         <button
           type="submit"
-          className="cursor-pointer rounded bg-blue-500 px-2 py-1 text-white hover:bg-blue-600"
+          disabled={isLoading}
+          className="cursor-pointer rounded bg-blue-500 px-2 py-1 text-white hover:bg-blue-600 disabled:cursor-auto disabled:bg-gray-400"
         >
           Edit field
         </button>

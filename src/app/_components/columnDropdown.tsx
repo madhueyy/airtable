@@ -33,6 +33,8 @@ function ColumnDropdown({
   tableId,
   createColumn,
   setColumns,
+  refetch,
+  setIsLoading,
 }: {
   setColumnDropdownOpen: React.Dispatch<React.SetStateAction<boolean>>;
   table: Table | undefined | null;
@@ -44,6 +46,8 @@ function ColumnDropdown({
   /* eslint-disable */
   createColumn: any;
   setColumns: React.Dispatch<React.SetStateAction<any[]>>;
+  refetch: () => void;
+  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   const [columnName, setColumnName] = useState("");
   const [selectedType, setSelectedType] = useState("");
@@ -68,6 +72,8 @@ function ColumnDropdown({
       columnName,
       selectedType,
       setColumns,
+      refetch,
+      setIsLoading,
     );
 
     setColumnDropdownOpen(false);

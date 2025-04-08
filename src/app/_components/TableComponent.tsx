@@ -50,6 +50,7 @@ function TableComponent({ tableId }: { tableId: string }) {
   const [data, setData] = useState<any[]>([]);
   const [columns, setColumns] = useState<any[]>([]);
   const [columnFilters, setColumnFilters] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const [columnDropdownOpen, setColumnDropdownOpen] = useState(false);
   const [editDropdownOpen, setEditDropdownOpen] = useState<
@@ -75,8 +76,9 @@ function TableComponent({ tableId }: { tableId: string }) {
   );
 
   const addRowFn = () =>
-    addRow(tableFromDb, setData, tableId, createRow, refetch);
-  const addRowsFn = () => addRows(tableFromDb, tableId, createRow, refetch);
+    addRow(tableFromDb, setData, tableId, createRow, refetch, setIsLoading);
+  const addRowsFn = () =>
+    addRows(tableFromDb, tableId, createRow, refetch, setIsLoading);
   const openDropdown = (columnId: string) => {
     setEditDropdownOpen((prevState) => ({
       ...prevState,
@@ -271,6 +273,8 @@ function TableComponent({ tableId }: { tableId: string }) {
         table={table}
         tableData={tableFromDb}
         onFilterChange={handleFilterChange}
+        isLoading={isLoading}
+        setIsLoading={setIsLoading}
       />
 
       {/* The table */}
@@ -334,6 +338,8 @@ function TableComponent({ tableId }: { tableId: string }) {
                         toggleColumnVisibility={toggleColumnVisibility}
                         toggleColumnSort={header.column.getToggleSortingHandler()}
                         isSorted={header.column.getIsSorted()}
+                        isLoading={isLoading}
+                        setIsLoading={setIsLoading}
                       />
                     )}
                   </th>
@@ -361,6 +367,8 @@ function TableComponent({ tableId }: { tableId: string }) {
                     tableId={tableId}
                     createColumn={createColumn}
                     setColumns={setColumns}
+                    refetch={refetch}
+                    setIsLoading={setIsLoading}
                   />
                 )}
               </th>
@@ -370,7 +378,7 @@ function TableComponent({ tableId }: { tableId: string }) {
 
         {/* All the cells */}
         <tbody>
-          {table.getFilteredRowModel().rows.map((row) => (
+          {table.getRowModel().rows.map((row) => (
             <tr key={row.id}>
               {row.getVisibleCells().map((cell) => {
                 // Get cellId from column in table
