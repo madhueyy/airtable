@@ -91,9 +91,17 @@ export const tableRouter = createTRPCRouter({
     }),
 
   getTable: publicProcedure
-    .input(z.object({ tableId: z.string() }))
+    .input(z.object({ tableId: z.string(), viewId: z.string().optional() }))
     .query(async ({ ctx, input }) => {
-      const { tableId } = input;
+      const { tableId, viewId } = input;
+
+      let viewConfig = null;
+      if (viewId) {
+        viewConfig = await ctx.db.view.findUnique({
+          where: { id: viewId },
+          select: { sorts: true },
+        });
+      }
 
       const table = await ctx.db.table.findUnique({
         where: { id: tableId },
@@ -103,15 +111,46 @@ export const tableRouter = createTRPCRouter({
               columnNum: "asc",
             },
             include: {
-              cells: {
-                orderBy: {
-                  rowNum: "asc",
-                },
-              },
+              cells: true,
             },
           },
         },
       });
+
+      // If column sort exists then apply,
+      // else apply default order (by rowNum)
+      if (viewConfig?.sorts && viewConfig.sorts.length > 0 && table) {
+        for (const column of table.columns) {
+          // Find if this specific column has sorts
+          const columnSort = viewConfig.sorts.find(
+            (sort) => sort.columnId === column.id,
+          );
+
+          if (columnSort) {
+            if (column.columnType === "NUMBER") {
+              column.cells.sort((a, b) => {
+                const aNum = Number(a.value) || 0;
+                const bNum = Number(b.value) || 0;
+                return columnSort.direction.toLowerCase() === "asc"
+                  ? aNum - bNum
+                  : bNum - aNum;
+              });
+            } else {
+              column.cells.sort((a, b) => {
+                return columnSort.direction.toLowerCase() === "asc"
+                  ? a.value.localeCompare(b.value)
+                  : b.value.localeCompare(a.value);
+              });
+            }
+          } else {
+            column.cells.sort((a, b) => a.rowNum - b.rowNum);
+          }
+        }
+      } else if (table) {
+        for (const column of table.columns) {
+          column.cells.sort((a, b) => a.rowNum - b.rowNum);
+        }
+      }
 
       return table;
     }),

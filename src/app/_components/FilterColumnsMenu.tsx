@@ -52,6 +52,7 @@ function FilterColumnsMenu({
 }: {
   tableData: Table;
   onFilterChange: (filters: Filter[]) => void;
+  /* eslint-disable */
   activeFilters: any[];
 }) {
   const [filters, setFilters] = useState<Filter[]>(activeFilters);
@@ -94,7 +95,7 @@ function FilterColumnsMenu({
         updatedFilters[index].id = columnId;
 
         const filterOptions = getFilterOptions(newValue);
-        updatedFilters[index].value.filterType = filterOptions[0] || "Contains";
+        updatedFilters[index].value.filterType = filterOptions[0] ?? "Contains";
       } else if (field === "filterType") {
         updatedFilters[index].value.filterType = newValue;
       } else {

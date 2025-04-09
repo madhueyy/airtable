@@ -39,10 +39,10 @@ function Dropdown({
   closeDropdown,
   refetch,
   toggleColumnVisibility,
-  toggleColumnSort,
-  isSorted,
   isLoading,
   setIsLoading,
+  activeViewId,
+  viewConfig,
 }: {
   columnId: string;
   columnName: string;
@@ -53,10 +53,11 @@ function Dropdown({
   /* eslint-disable */
   toggleColumnVisibility: any;
   /* eslint-disable */
-  toggleColumnSort: any;
-  isSorted: false | "asc" | "desc";
   isLoading: boolean;
   setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
+  activeViewId: string | undefined;
+  /* eslint-disable */
+  viewConfig: any;
 }) {
   const [newColumnName, setNewColumnName] = useState(columnName);
   const [selectedType, setSelectedType] = useState(columnType);
@@ -64,6 +65,7 @@ function Dropdown({
 
   const updateColumn = api.table.editColumn.useMutation();
   const deleteColumn = api.table.deleteColumn.useMutation();
+  const saveViewConfig = api.view.saveViewConfig.useMutation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,28 +113,36 @@ function Dropdown({
   };
 
   const handleSortClick =
-    (direction: "asc" | "desc") => (e: React.MouseEvent) => {
+    (direction: "asc" | "desc") => async (e: React.MouseEvent) => {
       e.preventDefault();
 
       setIsLoading(true);
 
-      console.log("isSorted " + isSorted);
+      if (activeViewId) {
+        const newSort = {
+          columnId,
+          direction,
+        };
 
-      // 'none' -> 'desc' -> 'asc' -> 'none' -> 'desc' -> 'asc' -> ...
-      if (isSorted === direction) {
-        toggleColumnSort(direction);
-        toggleColumnSort(direction);
-        toggleColumnSort(direction);
-      } else if (!isSorted && direction === "desc") {
-        toggleColumnSort(direction);
-      } else if (!isSorted && direction === "asc") {
-        toggleColumnSort(direction);
-        toggleColumnSort(direction);
-      } else if (isSorted === "asc" && direction === "desc") {
-        toggleColumnSort(direction);
-        toggleColumnSort(direction);
-      } else if (isSorted === "desc" && direction === "asc") {
-        toggleColumnSort(direction);
+        let sorts = viewConfig.data?.sorts || [];
+        const existingSortIndex = sorts.findIndex(
+          (sort: any) => sort.columnId === columnId,
+        );
+
+        if (existingSortIndex >= 0) {
+          sorts[existingSortIndex] = newSort;
+        } else {
+          sorts = [newSort, ...sorts];
+        }
+
+        await saveViewConfig.mutateAsync({
+          viewId: activeViewId,
+          sorts,
+          filters: viewConfig.data?.filters || [],
+          hiddenColumns: viewConfig.data?.hiddenColumns || [],
+        });
+
+        await refetch();
       }
 
       closeDropdown();
@@ -186,18 +196,14 @@ function Dropdown({
       <hr className="mx-2 pt-1 text-gray-300"></hr>
       <div className="flex w-full flex-col items-start px-2 py-2">
         <button
-          className={`flex w-full cursor-pointer items-center gap-x-2 rounded-sm px-2 py-1 hover:bg-gray-100 ${
-            isSorted === "asc" ? "bg-blue-200" : ""
-          }`}
+          className={`flex w-full cursor-pointer items-center gap-x-2 rounded-sm px-2 py-1 hover:bg-gray-100`}
           onClick={handleSortClick("asc")}
         >
           <PiSortAscending />
           {columnType === "TEXT" ? <p>Sort A → Z</p> : <p>Sort 1 → 9</p>}
         </button>
         <button
-          className={`flex w-full cursor-pointer items-center gap-x-2 rounded-sm px-2 py-1 hover:bg-gray-100 ${
-            isSorted === "desc" ? "bg-blue-200" : ""
-          }`}
+          className={`flex w-full cursor-pointer items-center gap-x-2 rounded-sm px-2 py-1 hover:bg-gray-100`}
           onClick={handleSortClick("desc")}
         >
           <PiSortDescending />

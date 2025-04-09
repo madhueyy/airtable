@@ -89,6 +89,7 @@ function TableComponent({ tableId }: { tableId: string }) {
 
   const { data: tableFromDb, refetch } = api.table.getTable.useQuery({
     tableId,
+    viewId: activeViewId,
   });
   const createColumn = api.table.addColumn.useMutation();
   const createRow = api.table.addRow.useMutation();
@@ -118,6 +119,8 @@ function TableComponent({ tableId }: { tableId: string }) {
   useEffect(() => {
     if (!tableFromDb) return;
 
+    console.log(tableFromDb);
+
     const rowMap: Record<number, any> = {};
     for (const col of tableFromDb.columns) {
       for (const cell of col.cells) {
@@ -130,7 +133,35 @@ function TableComponent({ tableId }: { tableId: string }) {
     }
 
     const rowData = Object.values(rowMap);
-    console.log(rowData);
+
+    if (activeViewConfig?.sorts && activeViewConfig.sorts.length > 0) {
+      // Get the first column with sorting applied
+      const primarySortConfig = activeViewConfig.sorts[0];
+      const primarySortColumn = tableFromDb.columns.find(
+        (col) => col.id === primarySortConfig?.columnId,
+      );
+
+      if (primarySortColumn) {
+        rowData.sort((a, b) => {
+          const aValue = a[primarySortColumn.name];
+          const bValue = b[primarySortColumn.name];
+
+          if (primarySortColumn.columnType === "NUMBER") {
+            const aNum = Number(aValue) || 0;
+            const bNum = Number(bValue) || 0;
+            return primarySortConfig?.direction.toLowerCase() === "asc"
+              ? aNum - bNum
+              : bNum - aNum;
+          } else {
+            return primarySortConfig?.direction.toLowerCase() === "asc"
+              ? String(aValue).localeCompare(String(bValue))
+              : String(bValue).localeCompare(String(aValue));
+          }
+        });
+      }
+    }
+
+    console.log("hahaha " + rowData);
     setData(rowData);
 
     const colDefs = tableFromDb?.columns.map((col) => ({
@@ -246,10 +277,8 @@ function TableComponent({ tableId }: { tableId: string }) {
     onColumnVisibilityChange: setColumnVisibility,
     getCoreRowModel: getCoreRowModel(),
     onGlobalFilterChange: setSearchInput,
-    getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     onColumnFiltersChange: setColumnFilters,
-    onSortingChange: setSorting,
     enableColumnFilters: true,
     filterFns: {
       custom: customFilterFn,
@@ -317,7 +346,6 @@ function TableComponent({ tableId }: { tableId: string }) {
       console.log("Hidden columns:", hiddenColumnIds);
 
       const filters = columnFilters.map((filter) => {
-        // Log the individual filter object to inspect its values
         console.log("columnId:", filter.id);
         console.log("filterType:", filter.value);
 
@@ -469,10 +497,10 @@ function TableComponent({ tableId }: { tableId: string }) {
                         }
                         refetch={refetch}
                         toggleColumnVisibility={toggleColumnVisibility}
-                        toggleColumnSort={header.column.getToggleSortingHandler()}
-                        isSorted={header.column.getIsSorted()}
                         isLoading={isLoading}
                         setIsLoading={setIsLoading}
+                        activeViewId={activeViewId}
+                        viewConfig={activeViewConfig}
                       />
                     )}
                   </th>

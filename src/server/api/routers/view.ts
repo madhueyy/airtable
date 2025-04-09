@@ -83,7 +83,6 @@ export const viewRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      // First, get the current view to compare what needs to be updated
       const currentView = await ctx.db.view.findUnique({
         where: { id: input.viewId },
         include: {
@@ -97,9 +96,8 @@ export const viewRouter = createTRPCRouter({
         throw new Error(`View with ID ${input.viewId} not found`);
       }
 
-      // Use a transaction for all operations
       return ctx.db.$transaction(async (tx) => {
-        // 1. Handle filters: Delete existing and create new ones
+        // Delete existing filters and create new ones
         await tx.filter.deleteMany({
           where: { viewId: input.viewId },
         });
@@ -116,7 +114,7 @@ export const viewRouter = createTRPCRouter({
           });
         }
 
-        // 2. Handle sorts: Delete existing and create new ones
+        // Delete existing sorts and create new ones
         await tx.sort.deleteMany({
           where: { viewId: input.viewId },
         });
@@ -132,8 +130,7 @@ export const viewRouter = createTRPCRouter({
           });
         }
 
-        // 3. Handle hidden columns
-        // First disconnect all columns
+        // Disconnect all hidden columns
         await tx.view.update({
           where: { id: input.viewId },
           data: {
@@ -145,7 +142,7 @@ export const viewRouter = createTRPCRouter({
           },
         });
 
-        // Then connect new hidden columns
+        // Connect new hidden columns
         if (input.hiddenColumns.length > 0) {
           await tx.view.update({
             where: { id: input.viewId },
@@ -157,7 +154,6 @@ export const viewRouter = createTRPCRouter({
           });
         }
 
-        // Return the updated view
         return tx.view.findUnique({
           where: { id: input.viewId },
           include: {
