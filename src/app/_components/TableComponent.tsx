@@ -99,10 +99,11 @@ function TableComponent({ tableId }: { tableId: string }) {
     { enabled: !!searchInput },
   );
   const { data: views } = api.view.getViewsByTable.useQuery({ tableId });
-  const { data: activeViewConfig } = api.view.getViewConfig.useQuery(
-    { viewId: activeViewId as string },
-    { enabled: !!activeViewId },
-  );
+  const { data: activeViewConfig, refetch: refetchActive } =
+    api.view.getViewConfig.useQuery(
+      { viewId: activeViewId as string },
+      { enabled: !!activeViewId },
+    );
   const saveViewConfig = api.view.saveViewConfig.useMutation();
 
   const addRowFn = () =>
@@ -141,6 +142,8 @@ function TableComponent({ tableId }: { tableId: string }) {
         (col) => col.id === primarySortConfig?.columnId,
       );
 
+      console.log("hahaha " + activeViewConfig?.sorts[0]?.direction);
+
       if (primarySortColumn) {
         rowData.sort((a, b) => {
           const aValue = a[primarySortColumn.name];
@@ -161,7 +164,6 @@ function TableComponent({ tableId }: { tableId: string }) {
       }
     }
 
-    console.log("hahaha " + rowData);
     setData(rowData);
 
     const colDefs = tableFromDb?.columns.map((col) => ({
@@ -187,7 +189,7 @@ function TableComponent({ tableId }: { tableId: string }) {
       },
     }));
     setColumns(colDefs ?? []);
-  }, [tableFromDb]);
+  }, [tableFromDb, sorting, activeViewConfig]);
 
   useEffect(() => {
     setActiveViewId(views?.[0]?.id);
@@ -428,6 +430,7 @@ function TableComponent({ tableId }: { tableId: string }) {
         isLoading={isLoading}
         viewsMenuOpen={viewsMenuOpen}
         setViewsMenuOpen={setViewsMenuOpen}
+        columnSortCount={activeViewConfig?.sorts.length}
       />
 
       {viewsMenuOpen && (
@@ -501,6 +504,7 @@ function TableComponent({ tableId }: { tableId: string }) {
                         setIsLoading={setIsLoading}
                         activeViewId={activeViewId}
                         viewConfig={activeViewConfig}
+                        refetchActive={refetchActive}
                       />
                     )}
                   </th>

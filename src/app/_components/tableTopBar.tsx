@@ -36,6 +36,7 @@ function TableTopBar({
   isLoading,
   viewsMenuOpen,
   setViewsMenuOpen,
+  columnSortCount,
 }: {
   searchIsOpen: boolean;
   setSearchIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -53,6 +54,7 @@ function TableTopBar({
   isLoading: boolean;
   viewsMenuOpen: boolean;
   setViewsMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  columnSortCount: number | undefined;
 }) {
   const [hiddenMenuOpen, setHiddenMenuOpen] = useState(false);
   const [filterMenuOpen, setFilterMenuOpen] = useState(false);
@@ -151,9 +153,16 @@ function TableTopBar({
           <p>Group</p>
         </div>
 
-        <div className="flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 text-sm font-medium hover:bg-gray-100">
+        {/* Sort columns */}
+        <div
+          className={`flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 text-sm font-medium hover:bg-gray-100 ${columnSortCount && columnSortCount > 0 ? "bg-orange-200 hover:bg-orange-300" : ""}`}
+        >
           <PiArrowsDownUp className="text-gray-600" />
-          <p>Sort</p>
+          {columnSortCount && columnSortCount > 0 ? (
+            <p>{columnSortCount} sorted field(s)</p>
+          ) : (
+            <p>Sort</p>
+          )}
         </div>
 
         <div className="flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 text-sm font-medium hover:bg-gray-100">

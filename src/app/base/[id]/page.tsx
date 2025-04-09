@@ -113,7 +113,7 @@ function Page() {
   return (
     <div className="h-[100vh]">
       {/* Navbar */}
-      <div className="mb-auto flex h-[6vh] flex-row items-center gap-x-4 bg-teal-600 px-4 py-3">
+      <div className="mb-auto flex h-14 flex-row items-center gap-x-4 bg-teal-600 px-4 py-3">
         <img
           src="/Airtable_Logo_white.png"
           className="w-5 cursor-pointer"
@@ -162,7 +162,7 @@ function Page() {
         </div>
       </div>
 
-      <div className="flex h-[3.5vh] flex-row items-center bg-teal-600">
+      <div className="flex flex-row items-center bg-teal-600">
         {/* Tables tabs */}
         <div className="flex w-[90%] flex-row items-center rounded-tr-md bg-teal-700 px-4">
           {allTables?.map(

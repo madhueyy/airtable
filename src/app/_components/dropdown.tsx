@@ -43,6 +43,7 @@ function Dropdown({
   setIsLoading,
   activeViewId,
   viewConfig,
+  refetchActive,
 }: {
   columnId: string;
   columnName: string;
@@ -58,6 +59,7 @@ function Dropdown({
   activeViewId: string | undefined;
   /* eslint-disable */
   viewConfig: any;
+  refetchActive: any;
 }) {
   const [newColumnName, setNewColumnName] = useState(columnName);
   const [selectedType, setSelectedType] = useState(columnType);
@@ -119,29 +121,38 @@ function Dropdown({
       setIsLoading(true);
 
       if (activeViewId) {
-        const newSort = {
-          columnId,
-          direction,
-        };
-
-        let sorts = viewConfig.data?.sorts || [];
+        let sorts = viewConfig.sorts || [];
         const existingSortIndex = sorts.findIndex(
           (sort: any) => sort.columnId === columnId,
         );
 
-        if (existingSortIndex >= 0) {
-          sorts[existingSortIndex] = newSort;
+        const isCurrentSort =
+          existingSortIndex >= 0 &&
+          sorts[existingSortIndex].direction === direction;
+
+        // REMOVING SORT NOT WORKING -- FIX
+        if (isCurrentSort) {
+          sorts = sorts.filter((sort: any) => sort.columnId !== columnId);
         } else {
-          sorts = [newSort, ...sorts];
+          const newSort = {
+            columnId,
+            direction,
+          };
+          if (existingSortIndex >= 0) {
+            sorts[existingSortIndex] = newSort;
+          } else {
+            sorts = [newSort, ...sorts];
+          }
         }
 
         await saveViewConfig.mutateAsync({
           viewId: activeViewId,
           sorts,
-          filters: viewConfig.data?.filters || [],
-          hiddenColumns: viewConfig.data?.hiddenColumns || [],
+          filters: viewConfig.filters || [],
+          hiddenColumns: viewConfig.hiddenColumns || [],
         });
 
+        await refetchActive();
         await refetch();
       }
 
@@ -149,6 +160,13 @@ function Dropdown({
 
       setIsLoading(false);
     };
+
+  const currSortDirection =
+    viewConfig.sorts
+      ?.find((sort: any) => sort.columnId === columnId)
+      ?.direction.toLocaleLowerCase() || null;
+
+  console.log("currSortDirection " + currSortDirection);
 
   return (
     <form
@@ -196,14 +214,18 @@ function Dropdown({
       <hr className="mx-2 pt-1 text-gray-300"></hr>
       <div className="flex w-full flex-col items-start px-2 py-2">
         <button
-          className={`flex w-full cursor-pointer items-center gap-x-2 rounded-sm px-2 py-1 hover:bg-gray-100`}
+          className={`flex w-full cursor-pointer items-center gap-x-2 rounded-sm px-2 py-1 hover:bg-gray-100 ${
+            currSortDirection === "asc" ? "bg-blue-200" : ""
+          }`}
           onClick={handleSortClick("asc")}
         >
           <PiSortAscending />
           {columnType === "TEXT" ? <p>Sort A → Z</p> : <p>Sort 1 → 9</p>}
         </button>
         <button
-          className={`flex w-full cursor-pointer items-center gap-x-2 rounded-sm px-2 py-1 hover:bg-gray-100`}
+          className={`flex w-full cursor-pointer items-center gap-x-2 rounded-sm px-2 py-1 hover:bg-gray-100 ${
+            currSortDirection === "desc" ? "bg-blue-200" : ""
+          }`}
           onClick={handleSortClick("desc")}
         >
           <PiSortDescending />
