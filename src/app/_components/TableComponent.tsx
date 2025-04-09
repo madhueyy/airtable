@@ -20,6 +20,7 @@ import { addRow, addRows } from "./tableHelperFunctions";
 import TableTopBar from "./tableTopBar";
 import ColumnDropdown from "./columnDropdown";
 import EditableCell from "./EditableCell";
+import ViewsSidebar from "./ViewsSidebar";
 
 type Table = {
   name: string;
@@ -45,12 +46,33 @@ type Cell = {
   columnNum: number;
 };
 
+const filterLabelMap: Record<string, string> = {
+  // prettier-ignore
+  "EQUALS": "Equal to",
+  // prettier-ignore
+  "NOT_EQUALS": "Not equal to",
+  // prettier-ignore
+  "CONTAINS": "Contains",
+  // prettier-ignore
+  "NOT_CONTAINS": "Not contains",
+  // prettier-ignore
+  "IS_EMPTY": "Is empty",
+  // prettier-ignore
+  "IS_NOT_EMPTY": "Is not empty",
+  // prettier-ignore
+  "GT": "Greater than",
+  // prettier-ignore
+  "LT": "Smaller than",
+};
+
 function TableComponent({ tableId }: { tableId: string }) {
   /* eslint-disable */
   const [data, setData] = useState<any[]>([]);
   const [columns, setColumns] = useState<any[]>([]);
   const [columnFilters, setColumnFilters] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [viewsMenuOpen, setViewsMenuOpen] = useState(false);
+  const [activeViewId, setActiveViewId] = useState<string | undefined>("");
 
   const [columnDropdownOpen, setColumnDropdownOpen] = useState(false);
   const [editDropdownOpen, setEditDropdownOpen] = useState<
@@ -63,6 +85,7 @@ function TableComponent({ tableId }: { tableId: string }) {
   const [columnVisibility, setColumnVisibility] = useState<
     Record<string, boolean>
   >({});
+  const [sorting, setSorting] = useState<any[]>([]);
 
   const { data: tableFromDb, refetch } = api.table.getTable.useQuery({
     tableId,
@@ -74,6 +97,12 @@ function TableComponent({ tableId }: { tableId: string }) {
     { tableId, searchQuery: searchInput },
     { enabled: !!searchInput },
   );
+  const { data: views } = api.view.getViewsByTable.useQuery({ tableId });
+  const { data: activeViewConfig } = api.view.getViewConfig.useQuery(
+    { viewId: activeViewId as string },
+    { enabled: !!activeViewId },
+  );
+  const saveViewConfig = api.view.saveViewConfig.useMutation();
 
   const addRowFn = () =>
     addRow(tableFromDb, setData, tableId, createRow, refetch, setIsLoading);
@@ -129,6 +158,51 @@ function TableComponent({ tableId }: { tableId: string }) {
     setColumns(colDefs ?? []);
   }, [tableFromDb]);
 
+  useEffect(() => {
+    setActiveViewId(views?.[0]?.id);
+  }, [views]);
+
+  useEffect(() => {
+    if (activeViewConfig) {
+      // Apply filters from view config
+      if (activeViewConfig.filters && activeViewConfig.filters.length > 0) {
+        const filters = activeViewConfig.filters.map((filter) => ({
+          id: filter.columnId,
+          value: {
+            filterType: filterLabelMap[filter.operator],
+            value: filter.value,
+          },
+        }));
+
+        setColumnFilters(filters);
+      } else {
+        setColumnFilters([]);
+      }
+
+      // Apply sorting from view config
+      if (activeViewConfig.sorts && activeViewConfig.sorts.length > 0) {
+        const sorts = activeViewConfig.sorts.map((sort) => ({
+          id: sort.columnId,
+          desc: sort.direction.toLocaleLowerCase(),
+        }));
+        setSorting(sorts);
+      } else {
+        setSorting([]);
+      }
+
+      // Apply hidden columns from view config
+      if (activeViewConfig.hiddenColumns) {
+        const newColumnVisibility: Record<string, boolean> = {};
+        activeViewConfig.hiddenColumns.forEach((columnId) => {
+          newColumnVisibility[columnId] = false;
+        });
+        setColumnVisibility(newColumnVisibility);
+      } else {
+        setColumnVisibility({});
+      }
+    }
+  }, [activeViewConfig]);
+
   const customFilterFn = (row: any, columnId: any, filterValue: any) => {
     const cellValue = row.getValue(columnId);
     const { filterType, value } = filterValue;
@@ -148,8 +222,8 @@ function TableComponent({ tableId }: { tableId: string }) {
     }
 
     if (typeof cellValue === "number" || !isNaN(Number(cellValue))) {
-      const numericValue = parseFloat(value);
-      const cellNumber = parseFloat(cellValue);
+      const numericValue = parseInt(value);
+      const cellNumber = parseInt(cellValue);
       switch (filterType) {
         case "Greater than":
           return cellNumber > numericValue;
@@ -167,6 +241,7 @@ function TableComponent({ tableId }: { tableId: string }) {
     state: {
       columnVisibility,
       columnFilters,
+      sorting,
     },
     onColumnVisibilityChange: setColumnVisibility,
     getCoreRowModel: getCoreRowModel(),
@@ -174,6 +249,7 @@ function TableComponent({ tableId }: { tableId: string }) {
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     onColumnFiltersChange: setColumnFilters,
+    onSortingChange: setSorting,
     enableColumnFilters: true,
     filterFns: {
       custom: customFilterFn,
@@ -232,34 +308,82 @@ function TableComponent({ tableId }: { tableId: string }) {
     }
   };
 
+  useEffect(() => {
+    if (activeViewId && table) {
+      const hiddenColumnIds = Object.entries(columnVisibility)
+        .filter(([_, isVisible]) => isVisible === false)
+        .map(([columnId]) => columnId);
+
+      console.log("Hidden columns:", hiddenColumnIds);
+
+      const filters = columnFilters.map((filter) => {
+        // Log the individual filter object to inspect its values
+        console.log("columnId:", filter.id);
+        console.log("filterType:", filter.value);
+
+        return {
+          columnId: filter.id,
+          filterType: filter.value.filterType,
+          value: filter.value.value,
+        };
+      });
+
+      const sorts = sorting.map((sort) => ({
+        columnId: sort.id,
+        direction: sort.desc,
+      }));
+
+      saveViewConfig.mutate({
+        viewId: activeViewId,
+        filters,
+        sorts,
+        hiddenColumns: hiddenColumnIds,
+      });
+    }
+  }, [columnVisibility]);
+
   const toggleColumnVisibility = (columnId: string) => {
     table.getColumn(columnId)?.toggleVisibility();
   };
 
-  const handleFilterChange = (
-    selectedColumn: string,
-    filterType: string,
-    inputValue: string,
-  ) => {
-    const matchingColumn = tableFromDb?.columns.find(
-      (c) => c.name === selectedColumn,
-    );
-
-    if (!matchingColumn) return;
-
-    const filter = {
-      id: matchingColumn.id,
+  const handleFilterChange = (filters: any[]) => {
+    const tableFilters = filters.map((filter) => ({
+      id: filter.id,
       value: {
-        filterType,
-        value: inputValue,
+        filterType: filter.value.filterType,
+        value: filter.value.value,
       },
-    };
+    }));
 
-    setColumnFilters([filter]);
+    setColumnFilters(tableFilters);
+
+    if (activeViewId && table) {
+      const hiddenColumnIds = Object.entries(columnVisibility)
+        .filter(([_, isVisible]) => isVisible === false)
+        .map(([columnId]) => columnId);
+
+      const filters = tableFilters.map((filter) => ({
+        columnId: filter.id,
+        filterType: filter.value.filterType,
+        value: filter.value.value,
+      }));
+
+      const sorts = sorting.map((sort) => ({
+        columnId: sort.id,
+        direction: sort.desc,
+      }));
+
+      saveViewConfig.mutate({
+        viewId: activeViewId,
+        filters,
+        sorts,
+        hiddenColumns: hiddenColumnIds,
+      });
+    }
   };
 
   return (
-    <div>
+    <div className="h-[91vh]">
       <TableTopBar
         searchIsOpen={searchIsOpen}
         setSearchIsOpen={setSearchIsOpen}
@@ -274,8 +398,17 @@ function TableComponent({ tableId }: { tableId: string }) {
         tableData={tableFromDb}
         onFilterChange={handleFilterChange}
         isLoading={isLoading}
-        setIsLoading={setIsLoading}
+        viewsMenuOpen={viewsMenuOpen}
+        setViewsMenuOpen={setViewsMenuOpen}
       />
+
+      {viewsMenuOpen && (
+        <ViewsSidebar
+          tableId={tableId}
+          activeViewId={activeViewId}
+          setActiveViewId={setActiveViewId}
+        />
+      )}
 
       {/* The table */}
       <table>

@@ -23,6 +23,7 @@ export const tableRouter = createTRPCRouter({
       const tableName = `Table ${tables.length + 1}`;
       const tableId = nanoid();
       const columnId1 = nanoid();
+      const viewId = nanoid();
       const rowNum = 3;
 
       const table = await ctx.db.table.create({
@@ -48,6 +49,14 @@ export const tableRouter = createTRPCRouter({
               },
             ],
           },
+          views: {
+            create: [
+              {
+                id: viewId,
+                name: "Grid view",
+              },
+            ],
+          },
         },
         include: {
           columns: {
@@ -55,6 +64,7 @@ export const tableRouter = createTRPCRouter({
               cells: true,
             },
           },
+          views: true,
         },
       });
 

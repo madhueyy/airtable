@@ -34,7 +34,8 @@ function TableTopBar({
   tableData,
   onFilterChange,
   isLoading,
-  setIsLoading,
+  viewsMenuOpen,
+  setViewsMenuOpen,
 }: {
   searchIsOpen: boolean;
   setSearchIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -50,11 +51,11 @@ function TableTopBar({
   tableData: any;
   onFilterChange: any;
   isLoading: boolean;
-  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
+  viewsMenuOpen: boolean;
+  setViewsMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   const [hiddenMenuOpen, setHiddenMenuOpen] = useState(false);
   const [filterMenuOpen, setFilterMenuOpen] = useState(false);
-  const [viewsMenuOpen, setViewsMenuOpen] = useState(false);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchInput(e.target.value);
@@ -81,9 +82,10 @@ function TableTopBar({
   const hiddenColumnsCount = Object.entries(columnVisibility).filter(
     ([_, isVisible]) => isVisible === false,
   ).length;
+  const columnFilterCount = table?.getState().columnFilters.length;
 
   return (
-    <div className="flex flex-row items-center justify-between gap-x-4 bg-white px-4 py-2">
+    <div className="flex h-[5vh] flex-row items-center justify-between gap-x-4 bg-white px-4 py-2">
       {/* Filter, sort, view etc. buttons */}
       <div className="flex flex-row items-center gap-x-2">
         <div
@@ -105,7 +107,7 @@ function TableTopBar({
 
         {/* Hidden columns */}
         <div
-          className={`flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 text-sm font-medium hover:bg-gray-100 ${hiddenColumnsCount > 0 ? "bg-blue-200" : ""}`}
+          className={`flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 text-sm font-medium hover:bg-gray-100 ${hiddenColumnsCount > 0 ? "bg-blue-200 hover:bg-blue-300" : ""}`}
           onClick={() => setHiddenMenuOpen((prev) => !prev)}
         >
           <BiHide className="text-gray-600" />
@@ -120,19 +122,26 @@ function TableTopBar({
         </div>
 
         {/* Filter columns */}
-        <div className="flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 text-sm font-medium hover:bg-gray-100">
+        <div
+          className={`flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 text-sm font-medium hover:bg-gray-100 ${columnFilterCount > 0 ? "bg-green-200 hover:bg-green-300" : ""}`}
+        >
           <div
             className="flex flex-row items-center gap-x-2"
             onClick={() => setFilterMenuOpen((prev) => !prev)}
           >
             <IoFilter className="text-gray-500" />
-            <p>Filter</p>
+            {columnFilterCount > 0 ? (
+              <p>{columnFilterCount} filter(s) applied</p>
+            ) : (
+              <p>Filter</p>
+            )}
           </div>
 
           {filterMenuOpen && (
             <FilterColumnsMenu
               tableData={tableData}
               onFilterChange={onFilterChange}
+              activeFilters={table?.getState().columnFilters || []}
             />
           )}
         </div>
@@ -212,8 +221,6 @@ function TableTopBar({
           </div>
         </div>
       )}
-
-      {viewsMenuOpen && <ViewsSidebar />}
     </div>
   );
 }

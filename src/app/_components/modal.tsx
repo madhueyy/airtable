@@ -21,7 +21,7 @@ function Modal({ isOpen, onClose }: ModalProps) {
   if (!isOpen) return null;
 
   const handleCreateBase = async () => {
-    setIsLoading(false);
+    setIsLoading(true);
     if (!baseName) return;
 
     try {
@@ -32,7 +32,7 @@ function Modal({ isOpen, onClose }: ModalProps) {
       console.log(error);
     }
 
-    setIsLoading(true);
+    setIsLoading(false);
   };
 
   return (
