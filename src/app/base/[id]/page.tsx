@@ -111,9 +111,9 @@ function Page() {
   };
 
   return (
-    <div className="h-[100vh]">
+    <div className="h-[100vh] bg-[#f7f7f7]">
       {/* Navbar */}
-      <div className="mb-auto flex h-14 flex-row items-center gap-x-4 bg-teal-600 px-4 py-3">
+      <div className="sticky top-0 z-1 mb-auto flex h-14 flex-row items-center gap-x-4 bg-teal-600 px-4 py-3">
         <img
           src="/Airtable_Logo_white.png"
           className="w-5 cursor-pointer"
@@ -162,7 +162,7 @@ function Page() {
         </div>
       </div>
 
-      <div className="flex flex-row items-center bg-teal-600">
+      <div className="sticky top-14 z-1 flex flex-row items-center bg-teal-600">
         {/* Tables tabs */}
         <div className="flex w-[90%] flex-row items-center rounded-tr-md bg-teal-700 px-4">
           {allTables?.map(
@@ -230,7 +230,7 @@ function Page() {
         </div>
       </div>
 
-      <div className="h-[91vh] w-[100vw] bg-[#f7f7f7]">
+      <div className="w-[99.2vw]">
         {currTable && <TableComponent tableId={currTable} />}
       </div>
     </div>

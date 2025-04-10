@@ -16,6 +16,7 @@ import Dropdown from "./dropdown";
 import { MdNumbers } from "react-icons/md";
 import { BsAlphabetUppercase } from "react-icons/bs";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { addRow, addRows } from "./tableHelperFunctions";
 import TableTopBar from "./tableTopBar";
 import ColumnDropdown from "./columnDropdown";
@@ -87,10 +88,24 @@ function TableComponent({ tableId }: { tableId: string }) {
   >({});
   const [sorting, setSorting] = useState<any[]>([]);
 
-  const { data: tableFromDb, refetch } = api.table.getTable.useQuery({
-    tableId,
-    viewId: activeViewId,
-  });
+  const {
+    data: tableData,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = api.table.getTable.useInfiniteQuery(
+    {
+      tableId,
+      viewId: activeViewId,
+      limit: 25,
+    },
+    {
+      getNextPageParam: (lastPage) => lastPage.nextCursor,
+      initialCursor: 0,
+    },
+  );
+
   const createColumn = api.table.addColumn.useMutation();
   const createRow = api.table.addRow.useMutation();
   const updateCellValue = api.table.updateCellValue.useMutation();
@@ -117,24 +132,32 @@ function TableComponent({ tableId }: { tableId: string }) {
     }));
   };
 
+  const parentRef = React.useRef<HTMLDivElement>(null);
+  const tableFromDb = tableData?.pages?.[0]?.table;
+
   useEffect(() => {
     if (!tableFromDb) return;
 
     console.log(tableFromDb);
 
     const rowMap: Record<number, any> = {};
-    for (const col of tableFromDb.columns) {
-      for (const cell of col.cells) {
-        if (!rowMap[cell.rowNum]) {
-          rowMap[cell.rowNum] = { _rowNum: cell.rowNum };
-        }
+    tableData.pages.forEach((page) => {
+      const table = page.table;
 
-        rowMap[cell.rowNum][col.name] = cell.value;
+      for (const col of table.columns) {
+        for (const cell of col.cells) {
+          if (!rowMap[cell.rowNum]) {
+            rowMap[cell.rowNum] = { _rowNum: cell.rowNum };
+          }
+
+          rowMap[cell.rowNum][col.name] = cell.value;
+        }
       }
-    }
+    });
 
     const rowData = Object.values(rowMap);
 
+    // Apply sorting
     if (activeViewConfig?.sorts && activeViewConfig.sorts.length > 0) {
       // Get the first column with sorting applied
       const primarySortConfig = activeViewConfig.sorts[0];
@@ -189,7 +212,7 @@ function TableComponent({ tableId }: { tableId: string }) {
       },
     }));
     setColumns(colDefs ?? []);
-  }, [tableFromDb, sorting, activeViewConfig]);
+  }, [tableData, tableFromDb, sorting, activeViewConfig]);
 
   useEffect(() => {
     setActiveViewId(views?.[0]?.id);
@@ -285,6 +308,15 @@ function TableComponent({ tableId }: { tableId: string }) {
     filterFns: {
       custom: customFilterFn,
     },
+  });
+
+  const rowVirtualizer = useVirtualizer({
+    count: hasNextPage
+      ? table.getRowModel().rows.length + 1
+      : table.getRowModel().rows.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 35,
+    overscan: 5,
   });
 
   useEffect(() => {
@@ -412,8 +444,28 @@ function TableComponent({ tableId }: { tableId: string }) {
     }
   };
 
+  // Load more rows
+  useEffect(() => {
+    const [lastItem] = [...rowVirtualizer.getVirtualItems()].reverse();
+
+    if (
+      lastItem &&
+      lastItem?.index >= table.getRowModel().rows.length - 1 &&
+      hasNextPage &&
+      !isFetchingNextPage
+    ) {
+      fetchNextPage();
+    }
+  }, [
+    hasNextPage,
+    fetchNextPage,
+    table.getRowModel().rows.length,
+    isFetchingNextPage,
+    rowVirtualizer.getVirtualItems(),
+  ]);
+
   return (
-    <div className="h-[91vh]">
+    <div className="bg-[#f7f7f7]">
       <TableTopBar
         searchIsOpen={searchIsOpen}
         setSearchIsOpen={setSearchIsOpen}
@@ -442,11 +494,11 @@ function TableComponent({ tableId }: { tableId: string }) {
       )}
 
       {/* The table */}
-      <table>
+      <div>
         {/* Each column's headings */}
-        <thead className="sticky top-0 bg-[#f4f4f4]">
+        <div className="sticky top-33.5 z-1 flex flex-row border border-gray-300 bg-[#fbfbfb]">
           {table.getHeaderGroups().map((headerGroup) => (
-            <tr key={headerGroup.id}>
+            <div key={headerGroup.id} className="flex flex-row">
               {headerGroup.headers.map((header) => {
                 const originalColumn = tableFromDb?.columns.find(
                   (col) => col.id === header.column.columnDef.id,
@@ -457,13 +509,13 @@ function TableComponent({ tableId }: { tableId: string }) {
                 const columnName = originalColumn?.name ?? "";
 
                 return (
-                  <th
+                  <div
                     key={header.id}
-                    className="h-8 border border-gray-300 font-normal"
+                    className="flex h-9 w-50 flex-row border-l border-gray-300 bg-[#f4f4f4] font-normal"
                   >
                     {/* Column heading name, type and drop down arrow */}
                     <div
-                      className="flex cursor-pointer flex-row items-center text-[14px]"
+                      className="flex w-full cursor-pointer flex-row items-center text-[14px]"
                       onClick={() => openDropdown(columnId)}
                     >
                       <div className="ml-2 flex flex-row items-center gap-x-2">
@@ -507,22 +559,22 @@ function TableComponent({ tableId }: { tableId: string }) {
                         refetchActive={refetchActive}
                       />
                     )}
-                  </th>
+                  </div>
                 );
               })}
 
               {/* Add column button */}
-              <th
-                className="cursor-pointer border border-gray-300 px-8 hover:bg-white"
+              <div
+                className="flex cursor-pointer flex-row items-center border-r border-l border-gray-300 bg-[#f4f4f4] px-8 hover:bg-white"
                 onClick={() => setColumnDropdownOpen(true)}
               >
                 <button className="flex cursor-pointer items-center text-gray-500">
                   <FaPlus />
                 </button>
-              </th>
+              </div>
 
               {/* Add column dropdown */}
-              <th>
+              <div>
                 {columnDropdownOpen && (
                   <ColumnDropdown
                     setColumnDropdownOpen={setColumnDropdownOpen}
@@ -536,69 +588,109 @@ function TableComponent({ tableId }: { tableId: string }) {
                     setIsLoading={setIsLoading}
                   />
                 )}
-              </th>
-            </tr>
+              </div>
+            </div>
           ))}
-        </thead>
+        </div>
 
         {/* All the cells */}
-        <tbody>
-          {table.getRowModel().rows.map((row) => (
-            <tr key={row.id}>
-              {row.getVisibleCells().map((cell) => {
-                // Get cellId from column in table
-                const originalColumn = tableFromDb?.columns.find(
-                  (col) => col.id === cell.column.columnDef.id,
-                );
-                const dbCell = originalColumn?.cells.find(
-                  (c) => c.rowNum === row.original._rowNum,
-                );
-                const cellId = dbCell?.id || "";
+        <div ref={parentRef} className="overflow-auto">
+          <div
+            className="relative"
+            style={{ height: `${rowVirtualizer.getTotalSize()}px` }}
+          >
+            {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+              const isLoaderRow =
+                virtualRow.index > table.getRowModel().rows.length - 1;
 
-                // Check if cellId is included in highlightedCells
-                const isHighlighted = highlightedCells.has(cellId);
-                const isCurrentHighlight =
-                  isHighlighted &&
-                  Array.from(highlightedCells)[currHighlightIndex] === cellId;
-
+              if (isLoaderRow) {
                 return (
-                  <td
-                    key={cell.id}
-                    id={`cell-${cellId}`}
-                    className={`h-8 w-50 border border-gray-300 bg-white text-[14px] ${
-                      isCurrentHighlight
-                        ? "bg-yellow-200"
-                        : isHighlighted
-                          ? "bg-yellow-100"
-                          : "bg-white/75"
-                    }`}
+                  <div
+                    key="loader"
+                    className="absolute top-0 left-0 flex w-full items-center justify-center"
+                    style={{
+                      height: `${virtualRow.size}px`,
+                      transform: `translateY(${virtualRow.start}px)`,
+                    }}
                   >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
+                    {isFetchingNextPage ? "Loading more rows..." : "Load more"}
+                  </div>
                 );
-              })}
-            </tr>
-          ))}
+              }
+
+              const row = table.getRowModel().rows[virtualRow.index];
+
+              return (
+                <div
+                  key={row?.id}
+                  className="absolute top-0 left-0 flex border-r border-b border-l border-gray-300"
+                  style={{
+                    height: `${virtualRow.size}px`,
+                    transform: `translateY(${virtualRow.start}px)`,
+                  }}
+                >
+                  {row?.getVisibleCells().map((cell) => {
+                    // Get cellId from column in table
+                    const originalColumn = tableFromDb?.columns.find(
+                      (col) => col.id === cell.column.columnDef.id,
+                    );
+                    const dbCell = originalColumn?.cells.find(
+                      (c) => c.rowNum === row.original._rowNum,
+                    );
+                    const cellId = dbCell?.id || "";
+
+                    // Check if cellId is included in highlightedCells
+                    const isHighlighted = highlightedCells.has(cellId);
+                    const isCurrentHighlight =
+                      isHighlighted &&
+                      Array.from(highlightedCells)[currHighlightIndex] ===
+                        cellId;
+
+                    // Cell content
+                    return (
+                      <div
+                        key={cell.id}
+                        id={`cell-${cellId}`}
+                        className={`h-9 w-50 border-l border-gray-300 bg-white text-[14px] ${
+                          isCurrentHighlight
+                            ? "bg-yellow-200"
+                            : isHighlighted
+                              ? "bg-yellow-100"
+                              : "bg-white/75"
+                        }`}
+                      >
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
 
           {/* Add row button */}
-          <tr>
-            <td
-              className="cursor-pointer border border-gray-300 py-2 pl-2 hover:bg-gray-200"
+          <div className="border-l-2 border-gray-300">
+            <div
+              className="h-9 w-50 cursor-pointer border border-gray-300 py-2 pl-2 hover:bg-gray-200"
               onClick={addRowFn}
             >
               <button className="flex cursor-pointer items-center text-gray-500">
                 <FaPlus />
               </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      <div className="mr-auto ml-2 flex">
+      <div className="sticky bottom-0 z-1 flex w-full border-t border-gray-300 bg-[#fbfbfb] py-2">
         <button
-          className="mx-auto mt-2 flex cursor-pointer items-center gap-x-2 rounded bg-blue-500 px-3 py-1 text-white"
+          className="mx-auto flex cursor-pointer items-center gap-x-2 rounded bg-blue-500 px-3 py-1 text-white"
           onClick={addRowsFn}
         >
+          <FaPlus />
           Add 100k Rows
         </button>
       </div>

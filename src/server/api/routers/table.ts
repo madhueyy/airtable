@@ -91,9 +91,16 @@ export const tableRouter = createTRPCRouter({
     }),
 
   getTable: publicProcedure
-    .input(z.object({ tableId: z.string(), viewId: z.string().optional() }))
+    .input(
+      z.object({
+        tableId: z.string(),
+        viewId: z.string().optional(),
+        limit: z.number().min(1).max(100).nullish(),
+        cursor: z.number().nullish(),
+      }),
+    )
     .query(async ({ ctx, input }) => {
-      const { tableId, viewId } = input;
+      const { tableId, viewId, limit, cursor } = input;
 
       let viewConfig = null;
       if (viewId) {
@@ -116,6 +123,32 @@ export const tableRouter = createTRPCRouter({
           },
         },
       });
+
+      if (!table || !limit) {
+        throw new Error("no table or no limit");
+      }
+
+      let rowQuery = {};
+      if (cursor !== undefined) {
+        rowQuery = {
+          rowNum: {
+            gt: cursor,
+          },
+        };
+      }
+
+      for (const column of table.columns) {
+        column.cells = await ctx.db.cell.findMany({
+          where: {
+            columnId: column.id,
+            ...rowQuery,
+          },
+          orderBy: {
+            rowNum: "asc",
+          },
+          take: limit,
+        });
+      }
 
       // If column sort exists then apply,
       // else apply default order (by rowNum)
@@ -152,7 +185,22 @@ export const tableRouter = createTRPCRouter({
         }
       }
 
-      return table;
+      let nextCursor: typeof cursor | undefined = undefined;
+      let maxRowNum = -1;
+
+      for (const column of table.columns) {
+        for (const cell of column.cells) {
+          if (cell.rowNum > maxRowNum) {
+            maxRowNum = cell.rowNum;
+          }
+        }
+      }
+
+      if (table?.columns.some((col) => col.cells.length === limit)) {
+        nextCursor = maxRowNum;
+      }
+
+      return { table, nextCursor };
     }),
 
   getHighlightedCells: publicProcedure

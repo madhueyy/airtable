@@ -87,7 +87,7 @@ function TableTopBar({
   const columnFilterCount = table?.getState().columnFilters.length;
 
   return (
-    <div className="flex h-[5vh] flex-row items-center justify-between gap-x-4 bg-white px-4 py-2">
+    <div className="sticky top-22 z-2 flex h-[5vh] flex-row items-center justify-between gap-x-4 bg-white px-4 py-2">
       {/* Filter, sort, view etc. buttons */}
       <div className="flex flex-row items-center gap-x-2">
         <div
@@ -190,7 +190,7 @@ function TableTopBar({
       />
 
       {searchIsOpen && (
-        <div className="absolute right-2 z-2 mt-32 border border-gray-300 shadow">
+        <div className="absolute right-0 z-2 mt-32 border border-gray-300 shadow">
           <div className="flex h-10 flex-row items-center bg-white px-2">
             <input
               type="text"

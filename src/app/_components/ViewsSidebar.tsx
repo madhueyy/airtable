@@ -47,7 +47,7 @@ function ViewsSidebar({
   };
 
   return (
-    <div className="absolute bottom-0 left-0 z-2 flex h-[83.8vh] w-[16%] flex-col justify-between border-r border-gray-300 bg-white px-4 py-4 shadow">
+    <div className="absolute bottom-0 left-0 z-2 flex h-[84.9%] w-[16%] flex-col justify-between border-r border-gray-300 bg-white px-4 py-4 shadow">
       <div>
         {views?.map((view) => (
           <button
