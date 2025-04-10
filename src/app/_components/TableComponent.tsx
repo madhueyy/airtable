@@ -138,7 +138,11 @@ function TableComponent({ tableId }: { tableId: string }) {
   useEffect(() => {
     if (!tableFromDb) return;
 
+    console.log("hellllll");
+
     console.log(tableFromDb);
+
+    console.log(activeViewConfig);
 
     const rowMap: Record<number, any> = {};
     tableData.pages.forEach((page) => {
@@ -212,7 +216,7 @@ function TableComponent({ tableId }: { tableId: string }) {
       },
     }));
     setColumns(colDefs ?? []);
-  }, [tableData, tableFromDb, sorting, activeViewConfig]);
+  }, [tableData, sorting, activeViewConfig, columnFilters]);
 
   useEffect(() => {
     setActiveViewId(views?.[0]?.id);
@@ -222,15 +226,7 @@ function TableComponent({ tableId }: { tableId: string }) {
     if (activeViewConfig) {
       // Apply filters from view config
       if (activeViewConfig.filters && activeViewConfig.filters.length > 0) {
-        const filters = activeViewConfig.filters.map((filter) => ({
-          id: filter.columnId,
-          value: {
-            filterType: filterLabelMap[filter.operator],
-            value: filter.value,
-          },
-        }));
-
-        setColumnFilters(filters);
+        setColumnFilters(activeViewConfig.filters);
       } else {
         setColumnFilters([]);
       }
@@ -259,55 +255,15 @@ function TableComponent({ tableId }: { tableId: string }) {
     }
   }, [activeViewConfig]);
 
-  const customFilterFn = (row: any, columnId: any, filterValue: any) => {
-    const cellValue = row.getValue(columnId);
-    const { filterType, value } = filterValue;
-
-    if (filterType === "Is empty") return !cellValue;
-    if (filterType === "Is not empty") return !!cellValue;
-
-    if (typeof cellValue === "string") {
-      switch (filterType) {
-        case "Contains":
-          return cellValue.toLowerCase().includes(value.toLowerCase());
-        case "Not contains":
-          return !cellValue.toLowerCase().includes(value.toLowerCase());
-        case "Equal to":
-          return cellValue === value;
-      }
-    }
-
-    if (typeof cellValue === "number" || !isNaN(Number(cellValue))) {
-      const numericValue = parseInt(value);
-      const cellNumber = parseInt(cellValue);
-      switch (filterType) {
-        case "Greater than":
-          return cellNumber > numericValue;
-        case "Smaller than":
-          return cellNumber < numericValue;
-      }
-    }
-
-    return true;
-  };
-
   const table = useReactTable({
     data,
     columns,
     state: {
       columnVisibility,
-      columnFilters,
-      sorting,
     },
     onColumnVisibilityChange: setColumnVisibility,
     getCoreRowModel: getCoreRowModel(),
     onGlobalFilterChange: setSearchInput,
-    getFilteredRowModel: getFilteredRowModel(),
-    onColumnFiltersChange: setColumnFilters,
-    enableColumnFilters: true,
-    filterFns: {
-      custom: customFilterFn,
-    },
   });
 
   const rowVirtualizer = useVirtualizer({
@@ -371,77 +327,73 @@ function TableComponent({ tableId }: { tableId: string }) {
     }
   };
 
-  useEffect(() => {
-    if (activeViewId && table) {
-      const hiddenColumnIds = Object.entries(columnVisibility)
-        .filter(([_, isVisible]) => isVisible === false)
-        .map(([columnId]) => columnId);
+  // useEffect(() => {
+  //   if (activeViewId && table) {
+  //     const hiddenColumnIds = Object.entries(columnVisibility)
+  //       .filter(([_, isVisible]) => isVisible === false)
+  //       .map(([columnId]) => columnId);
 
-      console.log("Hidden columns:", hiddenColumnIds);
+  //     console.log("Hidden columns:", hiddenColumnIds);
 
-      const filters = columnFilters.map((filter) => {
-        console.log("columnId:", filter.id);
-        console.log("filterType:", filter.value);
+  //     const newFilters = columnFilters.map((filter) => ({
+  //       columnId: filter.columnId,
+  //       filterType: filterLabelMap[filter.operator] || filter.operator,
+  //       value: filter.value,
+  //     }));
 
-        return {
-          columnId: filter.id,
-          filterType: filter.value.filterType,
-          value: filter.value.value,
-        };
-      });
+  //     console.log("columnFilters in useEffect:", columnFilters);
 
-      const sorts = sorting.map((sort) => ({
-        columnId: sort.id,
-        direction: sort.desc,
-      }));
+  //     const sorts = sorting.map((sort) => ({
+  //       columnId: sort.id,
+  //       direction: sort.desc,
+  //     }));
 
-      saveViewConfig.mutate({
-        viewId: activeViewId,
-        filters,
-        sorts,
-        hiddenColumns: hiddenColumnIds,
-      });
-    }
-  }, [columnVisibility]);
+  //     saveViewConfig.mutate({
+  //       viewId: activeViewId,
+  //       filters: newFilters,
+  //       sorts,
+  //       hiddenColumns: hiddenColumnIds,
+  //     });
+  //   }
+  // }, [columnVisibility]);
 
   const toggleColumnVisibility = (columnId: string) => {
     table.getColumn(columnId)?.toggleVisibility();
   };
 
-  const handleFilterChange = (filters: any[]) => {
-    const tableFilters = filters.map((filter) => ({
-      id: filter.id,
-      value: {
-        filterType: filter.value.filterType,
-        value: filter.value.value,
-      },
+  const handleFilterChange = async (filters: any[]) => {
+    setIsLoading(true);
+
+    const newFilters = filters.map((filter) => ({
+      columnId: filter.id,
+      filterType: filterLabelMap[filter.filterType] || filter.filterType,
+      value: filter.value,
     }));
 
-    setColumnFilters(tableFilters);
+    setColumnFilters(newFilters);
 
     if (activeViewId && table) {
       const hiddenColumnIds = Object.entries(columnVisibility)
         .filter(([_, isVisible]) => isVisible === false)
         .map(([columnId]) => columnId);
 
-      const filters = tableFilters.map((filter) => ({
-        columnId: filter.id,
-        filterType: filter.value.filterType,
-        value: filter.value.value,
-      }));
-
       const sorts = sorting.map((sort) => ({
         columnId: sort.id,
         direction: sort.desc,
       }));
 
-      saveViewConfig.mutate({
+      await saveViewConfig.mutateAsync({
         viewId: activeViewId,
-        filters,
+        filters: newFilters,
         sorts,
         hiddenColumns: hiddenColumnIds,
       });
     }
+
+    await refetchActive();
+    await refetch();
+
+    setIsLoading(false);
   };
 
   // Load more rows
@@ -464,6 +416,12 @@ function TableComponent({ tableId }: { tableId: string }) {
     rowVirtualizer.getVirtualItems(),
   ]);
 
+  const formattedFilters = activeViewConfig?.filters.map((filter) => ({
+    id: filter.columnId,
+    filterType: filterLabelMap[filter.operator] || filter.operator,
+    value: filter.value,
+  }));
+
   return (
     <div className="bg-[#f7f7f7]">
       <TableTopBar
@@ -483,6 +441,8 @@ function TableComponent({ tableId }: { tableId: string }) {
         viewsMenuOpen={viewsMenuOpen}
         setViewsMenuOpen={setViewsMenuOpen}
         columnSortCount={activeViewConfig?.sorts.length}
+        activeViewName={views?.find((view) => activeViewId === view.id)?.name}
+        activeFilters={formattedFilters}
       />
 
       {viewsMenuOpen && (
@@ -685,7 +645,7 @@ function TableComponent({ tableId }: { tableId: string }) {
         </div>
       </div>
 
-      <div className="sticky bottom-0 z-1 flex w-full border-t border-gray-300 bg-[#fbfbfb] py-2">
+      <div className="sticky bottom-0 z-0 flex w-full border-t border-gray-300 bg-[#fbfbfb] py-2">
         <button
           className="mx-auto flex cursor-pointer items-center gap-x-2 rounded bg-blue-500 px-3 py-1 text-white"
           onClick={addRowsFn}

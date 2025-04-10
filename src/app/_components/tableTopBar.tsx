@@ -37,6 +37,8 @@ function TableTopBar({
   viewsMenuOpen,
   setViewsMenuOpen,
   columnSortCount,
+  activeViewName,
+  activeFilters,
 }: {
   searchIsOpen: boolean;
   setSearchIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -55,6 +57,9 @@ function TableTopBar({
   viewsMenuOpen: boolean;
   setViewsMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
   columnSortCount: number | undefined;
+  activeViewName: string | undefined;
+  /* eslint-disable */
+  activeFilters: any;
 }) {
   const [hiddenMenuOpen, setHiddenMenuOpen] = useState(false);
   const [filterMenuOpen, setFilterMenuOpen] = useState(false);
@@ -84,7 +89,7 @@ function TableTopBar({
   const hiddenColumnsCount = Object.entries(columnVisibility).filter(
     ([_, isVisible]) => isVisible === false,
   ).length;
-  const columnFilterCount = table?.getState().columnFilters.length;
+  const columnFilterCount = activeFilters?.length;
 
   return (
     <div className="sticky top-22 z-2 flex h-[5vh] flex-row items-center justify-between gap-x-4 bg-white px-4 py-2">
@@ -100,9 +105,10 @@ function TableTopBar({
 
         <div className="mx-2 h-[18px] w-[1px] bg-black/30"></div>
 
+        {/* Active view name */}
         <div className="flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 font-medium hover:bg-gray-100">
           <PiGridNineThin className="text-xl text-blue-500" />
-          <p className="text-sm">Grid view</p>
+          <p className="text-sm">{activeViewName}</p>
           <HiOutlineUserGroup />
           <IoIosArrowDown />
         </div>
@@ -143,7 +149,7 @@ function TableTopBar({
             <FilterColumnsMenu
               tableData={tableData}
               onFilterChange={onFilterChange}
-              activeFilters={table?.getState().columnFilters || []}
+              activeFilters={activeFilters}
             />
           )}
         </div>

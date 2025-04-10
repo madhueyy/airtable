@@ -230,7 +230,7 @@ function Page() {
         </div>
       </div>
 
-      <div className="w-[99.2vw]">
+      <div className="w-[100vw]">
         {currTable && <TableComponent tableId={currTable} />}
       </div>
     </div>

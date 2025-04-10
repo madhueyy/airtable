@@ -39,10 +39,8 @@ const numberFilters = ["Greater than", "Smaller than"];
 
 type Filter = {
   id: string;
-  value: {
-    filterType: string;
-    value: string;
-  };
+  filterType: string;
+  value: string;
 };
 
 function FilterColumnsMenu({
@@ -95,11 +93,11 @@ function FilterColumnsMenu({
         updatedFilters[index].id = columnId;
 
         const filterOptions = getFilterOptions(newValue);
-        updatedFilters[index].value.filterType = filterOptions[0] ?? "Contains";
+        updatedFilters[index].filterType = filterOptions[0] ?? "Contains";
       } else if (field === "filterType") {
-        updatedFilters[index].value.filterType = newValue;
+        updatedFilters[index].filterType = newValue;
       } else {
-        updatedFilters[index].value.value = newValue;
+        updatedFilters[index].value = newValue;
       }
 
       console.log("okokok " + updatedFilters[index].id);
@@ -117,7 +115,7 @@ function FilterColumnsMenu({
   const addFilter = () => {
     const newFilters = [
       ...filters,
-      { id: "", value: { filterType: "Contains", value: "" } },
+      { id: "", filterType: "Contains", value: "" },
     ];
     setFilters(newFilters);
   };
@@ -142,6 +140,7 @@ function FilterColumnsMenu({
       {filters?.map((filter, index) => {
         const columnName = getColumnNameById(filter.id);
         console.log("columnName " + columnName);
+        console.log("filterTypeee " + filter.filterType);
 
         return (
           <div
@@ -166,7 +165,7 @@ function FilterColumnsMenu({
 
               {/* Dropdown for filters */}
               <select
-                value={filter.value.filterType}
+                value={filter.filterType}
                 onChange={(e) =>
                   updateFilter(index, "filterType", e.target.value)
                 }
@@ -182,7 +181,7 @@ function FilterColumnsMenu({
               <div className="flex h-10 w-[60%] items-center rounded-sm border border-gray-300 px-1">
                 <input
                   type="text"
-                  value={filter.value.value}
+                  value={filter.value}
                   placeholder="Enter a value"
                   className="h-full w-full focus:outline-none"
                   onChange={(e) => updateFilter(index, "value", e.target.value)}
@@ -191,14 +190,14 @@ function FilterColumnsMenu({
 
               <button
                 onClick={saveFilter}
-                className="flex h-10 w-10 items-center justify-center text-gray-400 hover:text-gray-600"
+                className="flex h-10 w-10 cursor-pointer items-center justify-center text-blue-500 hover:text-green-600"
               >
                 <BiSolidSave />
               </button>
 
               <button
                 onClick={() => deleteFilter(index)}
-                className="flex h-10 w-10 items-center justify-center text-gray-400 hover:text-gray-600"
+                className="flex h-10 w-10 cursor-pointer items-center justify-center text-red-500 hover:text-red-600"
               >
                 <IoTrashOutline />
               </button>

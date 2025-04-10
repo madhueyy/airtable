@@ -31,6 +31,25 @@ type Cell = {
   columnNum: number;
 };
 
+const filterLabelMap: Record<string, string> = {
+  // prettier-ignore
+  "EQUALS": "Equal to",
+  // prettier-ignore
+  "NOT_EQUALS": "Not equal to",
+  // prettier-ignore
+  "CONTAINS": "Contains",
+  // prettier-ignore
+  "NOT_CONTAINS": "Not contains",
+  // prettier-ignore
+  "IS_EMPTY": "Is empty",
+  // prettier-ignore
+  "IS_NOT_EMPTY": "Is not empty",
+  // prettier-ignore
+  "GT": "Greater than",
+  // prettier-ignore
+  "LT": "Smaller than",
+};
+
 function Dropdown({
   columnId,
   columnName,
@@ -145,10 +164,18 @@ function Dropdown({
           }
         }
 
+        const newFilters = viewConfig.filters.map((filter: any) => ({
+          columnId: filter.columnId,
+          filterType: filterLabelMap[filter.operator] || filter.operator,
+          value: filter.value,
+        }));
+
+        console.log(viewConfig.filters[0]);
+
         await saveViewConfig.mutateAsync({
           viewId: activeViewId,
           sorts,
-          filters: viewConfig.filters || [],
+          filters: newFilters || [],
           hiddenColumns: viewConfig.hiddenColumns || [],
         });
 
@@ -170,7 +197,7 @@ function Dropdown({
 
   return (
     <form
-      className="absolute z-1 mt-2 ml-4 w-100 rounded-md border border-gray-300 bg-white text-start shadow-sm"
+      className="absolute z-2 mt-2 ml-4 w-100 rounded-md border border-gray-300 bg-white text-start shadow-sm"
       onSubmit={handleSubmit}
     >
       <div className="w-full px-2 pt-2 pb-1">

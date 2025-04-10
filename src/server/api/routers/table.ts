@@ -106,7 +106,7 @@ export const tableRouter = createTRPCRouter({
       if (viewId) {
         viewConfig = await ctx.db.view.findUnique({
           where: { id: viewId },
-          select: { sorts: true },
+          select: { sorts: true, filters: { include: { column: true } } },
         });
       }
 
@@ -148,6 +148,82 @@ export const tableRouter = createTRPCRouter({
           },
           take: limit,
         });
+      }
+
+      // If column filters exist then apply
+      if (viewConfig?.filters && viewConfig.filters.length > 0 && table) {
+        const allRowNums = new Set<number>();
+        table.columns.forEach((column) => {
+          column.cells.forEach((cell) => {
+            allRowNums.add(cell.rowNum);
+          });
+        });
+
+        const validRowNums = new Set<number>();
+
+        allRowNums.forEach((rowNum) => {
+          let passesAllFilters = true;
+
+          for (const filter of viewConfig.filters) {
+            const column = table.columns.find(
+              (col) => col.id === filter.columnId,
+            );
+
+            if (!column) continue;
+
+            const cell = column.cells.find((cell) => cell.rowNum === rowNum);
+            if (!cell) continue;
+
+            const cellValue = cell.value;
+
+            switch (filter.operator) {
+              case "EQUALS":
+                if (cellValue !== filter.value) passesAllFilters = false;
+                break;
+              case "NOT_EQUALS":
+                if (cellValue === filter.value) passesAllFilters = false;
+                break;
+              case "CONTAINS":
+                if (!cellValue.includes(filter.value)) passesAllFilters = false;
+                break;
+              case "NOT_CONTAINS":
+                if (cellValue.includes(filter.value)) passesAllFilters = false;
+                break;
+              case "IS_EMPTY":
+                if (cellValue !== "") passesAllFilters = false;
+                break;
+              case "IS_NOT_EMPTY":
+                if (cellValue === "") passesAllFilters = false;
+                break;
+              case "GT":
+                if (column.columnType === "NUMBER") {
+                  const numValue = Number(cellValue) || 0;
+                  const filterValue = Number(filter.value) || 0;
+                  if (!(numValue > filterValue)) passesAllFilters = false;
+                }
+                break;
+              case "LT":
+                if (column.columnType === "NUMBER") {
+                  const numValue = Number(cellValue) || 0;
+                  const filterValue = Number(filter.value) || 0;
+                  if (!(numValue < filterValue)) passesAllFilters = false;
+                }
+                break;
+            }
+
+            if (!passesAllFilters) break;
+          }
+
+          if (passesAllFilters) {
+            validRowNums.add(rowNum);
+          }
+        });
+
+        for (const column of table.columns) {
+          column.cells = column.cells.filter((cell) =>
+            validRowNums.has(cell.rowNum),
+          );
+        }
       }
 
       // If column sort exists then apply,
