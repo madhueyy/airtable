@@ -226,32 +226,40 @@ export const addRows = async (
   console.log("hello");
   setIsLoading(true);
 
+  const BATCH_SIZE = 1000;
+  const TOTAL = 100000;
   const currRowLength = table?.columns[0]?.cells.length ?? 0;
-
-  const newCells = Array.from({ length: 100000 }).flatMap((_, rowIndex) => {
-    const newRowNum = currRowLength + rowIndex + 1;
-
-    return table?.columns?.map((column) => ({
-      id: nanoid(),
-      rowNum: newRowNum,
-      value: "",
-      tableId: tableId,
-      columnId: column.id,
-      columnNum: column.columnNum,
-    }));
-  });
 
   // Send request to db
   try {
-    await createRow.mutateAsync({
-      tableId: tableId,
-      cells: newCells.map(({ ...rest }) => rest),
-    });
+    for (let batchStart = 0; batchStart < TOTAL; batchStart += BATCH_SIZE) {
+      const batchSize = Math.min(BATCH_SIZE, TOTAL - batchStart);
+
+      const newCells = Array.from({ length: batchSize }).flatMap(
+        (_, rowIndex) => {
+          const newRowNum = currRowLength + rowIndex + 1;
+
+          return table?.columns?.map((column) => ({
+            id: nanoid(),
+            rowNum: newRowNum,
+            value: "",
+            tableId: tableId,
+            columnId: column.id,
+            columnNum: column.columnNum,
+          }));
+        },
+      );
+
+      await createRow.mutateAsync({
+        tableId: tableId,
+        cells: newCells.map(({ ...rest }) => rest),
+      });
+    }
 
     await refetch();
-
-    setIsLoading(false);
   } catch (error) {
     console.log(error);
+  } finally {
+    setIsLoading(false);
   }
 };
