@@ -39,7 +39,7 @@ function Page() {
 
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.push("/");
+      router.push("/sign-in");
     }
   }, [status, router]);
 
