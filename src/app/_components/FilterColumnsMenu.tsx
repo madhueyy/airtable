@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { FaPlus } from "react-icons/fa6";
 import { IoTrashOutline } from "react-icons/io5";
 import { BiSolidSave } from "react-icons/bi";
@@ -47,11 +47,14 @@ function FilterColumnsMenu({
   tableData,
   onFilterChange,
   activeFilters = [],
+  setFilterMenuOpen,
 }: {
   tableData: Table;
   onFilterChange: (filters: Filter[]) => void;
   /* eslint-disable */
   activeFilters: any[];
+  /* eslint-disable */
+  setFilterMenuOpen: any;
 }) {
   const [filters, setFilters] = useState<Filter[]>(activeFilters);
 
@@ -110,6 +113,8 @@ function FilterColumnsMenu({
     if (filters.length > 0) {
       onFilterChange(filters);
     }
+
+    setFilterMenuOpen(false);
   };
 
   const addFilter = () => {
@@ -129,6 +134,8 @@ function FilterColumnsMenu({
       setFilters(updatedFilters);
       onFilterChange(updatedFilters);
     }
+
+    setFilterMenuOpen(false);
   };
 
   return (
@@ -188,30 +195,30 @@ function FilterColumnsMenu({
                 ></input>
               </div>
 
-              <button
+              <div
                 onClick={saveFilter}
-                className="flex h-10 w-10 cursor-pointer items-center justify-center text-blue-500 hover:text-green-600"
+                className="flex h-10 w-10 cursor-pointer items-center justify-center text-blue-500 hover:text-blue-600"
               >
                 <BiSolidSave />
-              </button>
+              </div>
 
-              <button
+              <div
                 onClick={() => deleteFilter(index)}
                 className="flex h-10 w-10 cursor-pointer items-center justify-center text-red-500 hover:text-red-600"
               >
                 <IoTrashOutline />
-              </button>
+              </div>
             </div>
           </div>
         );
       })}
 
-      <button
+      <div
         className="flex cursor-pointer flex-row items-center gap-x-2 py-2 text-gray-500 hover:text-gray-800"
         onClick={addFilter}
       >
         <FaPlus /> Add condition
-      </button>
+      </div>
     </div>
   );
 }

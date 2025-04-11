@@ -72,6 +72,7 @@ function TableComponent({ tableId }: { tableId: string }) {
   const [columns, setColumns] = useState<any[]>([]);
   const [columnFilters, setColumnFilters] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingInitially, setIsLoadingInitially] = useState(true);
   const [viewsMenuOpen, setViewsMenuOpen] = useState(false);
   const [activeViewId, setActiveViewId] = useState<string | undefined>("");
 
@@ -138,8 +139,6 @@ function TableComponent({ tableId }: { tableId: string }) {
   useEffect(() => {
     if (!tableFromDb) return;
 
-    console.log("hellllll");
-
     console.log(tableFromDb);
 
     console.log(activeViewConfig);
@@ -193,30 +192,55 @@ function TableComponent({ tableId }: { tableId: string }) {
 
     setData(rowData);
 
-    const colDefs = tableFromDb?.columns.map((col) => ({
-      accessorKey: col.name,
-      header: col.name,
-      id: col.id,
-      filterFn: "custom",
-      cell: (props: any) => {
-        const rowIndex = props.row.index;
-        const rowNum = rowData[rowIndex]._rowNum;
-        const cellId =
-          col.cells.find((cell) => cell.rowNum === rowNum)?.id ?? "";
+    // Adding select column with row nums
+    const selectionColumn = {
+      id: "selection",
+      header: () => (
+        <div className="flex items-center justify-center">
+          <input type="checkbox" className="h-3 w-3" />
+        </div>
+      ),
+      accessorKey: "_rowNum",
+      cell: ({ row }: { row: Row<any> }) => (
+        <div className="flex items-center justify-start pl-3 text-xs text-gray-500">
+          <p className="mt-2">{row.original._rowNum}</p>
+        </div>
+      ),
+    };
 
-        return (
-          <EditableCell
-            getValue={props.getValue}
-            cellId={cellId}
-            columnType={col.columnType}
-            tableId={tableId}
-            updateCellValue={updateCellValue}
-          />
-        );
-      },
-    }));
+    const colDefs = [
+      selectionColumn,
+      ...tableFromDb?.columns.map((col) => ({
+        accessorKey: col.name,
+        header: col.name,
+        id: col.id,
+        cell: (props: any) => {
+          const rowIndex = props.row.index;
+          const rowNum = rowData[rowIndex]._rowNum;
+          const cellId =
+            col.cells.find((cell) => cell.rowNum === rowNum)?.id ?? "";
+
+          return (
+            <EditableCell
+              getValue={props.getValue}
+              cellId={cellId}
+              columnType={col.columnType}
+              tableId={tableId}
+              updateCellValue={updateCellValue}
+            />
+          );
+        },
+      })),
+    ];
+
     setColumns(colDefs ?? []);
   }, [tableData, sorting, activeViewConfig, columnFilters]);
+
+  useEffect(() => {
+    if (tableData) {
+      setIsLoadingInitially(false);
+    }
+  }, [tableData]);
 
   useEffect(() => {
     setActiveViewId(views?.[0]?.id);
@@ -327,33 +351,26 @@ function TableComponent({ tableId }: { tableId: string }) {
     }
   };
 
+  // HIDING SAVING CAUSING PROBLEMS FOR SORT AND FILTER -- FIX
   // useEffect(() => {
   //   if (activeViewId && table) {
+  //     setIsLoading(true);
+
   //     const hiddenColumnIds = Object.entries(columnVisibility)
   //       .filter(([_, isVisible]) => isVisible === false)
   //       .map(([columnId]) => columnId);
 
-  //     console.log("Hidden columns:", hiddenColumnIds);
-
-  //     const newFilters = columnFilters.map((filter) => ({
-  //       columnId: filter.columnId,
-  //       filterType: filterLabelMap[filter.operator] || filter.operator,
-  //       value: filter.value,
-  //     }));
-
-  //     console.log("columnFilters in useEffect:", columnFilters);
-
-  //     const sorts = sorting.map((sort) => ({
-  //       columnId: sort.id,
-  //       direction: sort.desc,
-  //     }));
-
-  //     saveViewConfig.mutate({
+  //     saveViewConfig.mutateAsync({
   //       viewId: activeViewId,
-  //       filters: newFilters,
-  //       sorts,
+  //       filters: columnFilters,
+  //       sorts: sorting,
   //       hiddenColumns: hiddenColumnIds,
   //     });
+
+  //     refetchActive();
+  //     refetch();
+
+  //     setIsLoading(false);
   //   }
   // }, [columnVisibility]);
 
@@ -438,7 +455,7 @@ function TableComponent({ tableId }: { tableId: string }) {
         table={table}
         tableData={tableFromDb}
         onFilterChange={handleFilterChange}
-        isLoading={isLoading}
+        isLoading={isLoading || isLoadingInitially}
         viewsMenuOpen={viewsMenuOpen}
         setViewsMenuOpen={setViewsMenuOpen}
         columnSortCount={activeViewConfig?.sorts.length}
@@ -457,7 +474,7 @@ function TableComponent({ tableId }: { tableId: string }) {
       {/* The table */}
       <div>
         {/* Each column's headings */}
-        <div className="sticky top-33.5 z-1 flex flex-row border border-gray-300 bg-[#fbfbfb]">
+        <div className="sticky top-0 z-1 flex flex-row border border-gray-300 bg-[#fbfbfb]">
           {table.getHeaderGroups().map((headerGroup) => (
             <div key={headerGroup.id} className="flex flex-row">
               {headerGroup.headers.map((header) => {
@@ -469,10 +486,14 @@ function TableComponent({ tableId }: { tableId: string }) {
                 const columnType = originalColumn?.columnType ?? "";
                 const columnName = originalColumn?.name ?? "";
 
+                const isSelectionColumn = header.column.id === "selection";
+                const firstColumn = tableFromDb?.columns[0]?.id;
+                const isFirstColumn = firstColumn === header.column.id;
+
                 return (
                   <div
                     key={header.id}
-                    className="flex h-9 w-50 flex-row border-l border-gray-300 bg-[#f4f4f4] font-normal"
+                    className={`flex h-9 ${isSelectionColumn ? "w-10" : "w-50"} flex-row ${isFirstColumn ? "" : "border-l"} border-gray-300 bg-[#f4f4f4] font-normal`}
                   >
                     {/* Column heading name, type and drop down arrow */}
                     <div
@@ -492,34 +513,36 @@ function TableComponent({ tableId }: { tableId: string }) {
                         )}
                       </div>
 
-                      <IoIosArrowDown
-                        className="mr-2 ml-auto text-gray-400"
-                        size={14}
-                      />
+                      {!isSelectionColumn && (
+                        <IoIosArrowDown
+                          className="mr-2 ml-auto text-gray-400"
+                          size={14}
+                        />
+                      )}
                     </div>
-
                     {/* Dropdown menu for column type */}
-                    {editDropdownOpen[originalColumn?.id ?? ""] && (
-                      <Dropdown
-                        columnId={columnId}
-                        columnName={columnName}
-                        columnType={columnType}
-                        tableId={tableId}
-                        closeDropdown={() =>
-                          setEditDropdownOpen((prev) => ({
-                            ...prev,
-                            [columnId]: false,
-                          }))
-                        }
-                        refetch={refetch}
-                        toggleColumnVisibility={toggleColumnVisibility}
-                        isLoading={isLoading}
-                        setIsLoading={setIsLoading}
-                        activeViewId={activeViewId}
-                        viewConfig={activeViewConfig}
-                        refetchActive={refetchActive}
-                      />
-                    )}
+                    {!isSelectionColumn &&
+                      editDropdownOpen[originalColumn?.id ?? ""] && (
+                        <Dropdown
+                          columnId={columnId}
+                          columnName={columnName}
+                          columnType={columnType}
+                          tableId={tableId}
+                          closeDropdown={() =>
+                            setEditDropdownOpen((prev) => ({
+                              ...prev,
+                              [columnId]: false,
+                            }))
+                          }
+                          refetch={refetch}
+                          toggleColumnVisibility={toggleColumnVisibility}
+                          isLoading={isLoading}
+                          setIsLoading={setIsLoading}
+                          activeViewId={activeViewId}
+                          viewConfig={activeViewConfig}
+                          refetchActive={refetchActive}
+                        />
+                      )}
                   </div>
                 );
               })}
@@ -574,7 +597,7 @@ function TableComponent({ tableId }: { tableId: string }) {
                       transform: `translateY(${virtualRow.start}px)`,
                     }}
                   >
-                    {isFetchingNextPage ? "Loading more rows..." : "Load more"}
+                    {isFetchingNextPage ? "Loading rows..." : "Load more rows"}
                   </div>
                 );
               }
@@ -607,12 +630,16 @@ function TableComponent({ tableId }: { tableId: string }) {
                       Array.from(highlightedCells)[currHighlightIndex] ===
                         cellId;
 
+                    const isSelectionColumn = cell.column.id === "selection";
+                    const firstColumn = tableFromDb?.columns[0]?.id;
+                    const isFirstColumn = firstColumn === cell.column.id;
+
                     // Cell content
                     return (
                       <div
                         key={cell.id}
                         id={`cell-${cellId}`}
-                        className={`h-9 w-50 border-l border-gray-300 bg-white text-[14px] ${
+                        className={`h-9 ${isSelectionColumn ? "w-10" : "w-50"} ${isFirstColumn ? "" : "border-l"} border-gray-300 text-[14px] ${
                           isCurrentHighlight
                             ? "bg-yellow-200"
                             : isHighlighted
@@ -635,7 +662,7 @@ function TableComponent({ tableId }: { tableId: string }) {
           {/* Add row button */}
           <div className="border-l-2 border-gray-300">
             <div
-              className="h-9 w-50 cursor-pointer border border-gray-300 py-2 pl-2 hover:bg-gray-200"
+              className="h-9 w-60 cursor-pointer border-t border-r border-l border-gray-300 bg-white/75 py-2 pl-2 hover:bg-gray-200"
               onClick={addRowFn}
             >
               <button className="flex cursor-pointer items-center text-gray-500">
@@ -646,7 +673,7 @@ function TableComponent({ tableId }: { tableId: string }) {
         </div>
       </div>
 
-      <div className="sticky bottom-0 z-0 flex w-full border-t border-gray-300 bg-[#fbfbfb] py-2">
+      <div className="sticky bottom-0 z-0 flex w-full border-t border-gray-300 bg-[#f7f7f7] py-2">
         <button
           className="mx-auto flex cursor-pointer items-center gap-x-2 rounded bg-blue-500 px-3 py-1 text-white"
           onClick={addRowsFn}

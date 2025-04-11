@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { BsThreeDots } from "react-icons/bs";
 import { MdEdit } from "react-icons/md";
 import { IoTrashOutline } from "react-icons/io5";
+import { IoIosArrowDown } from "react-icons/io";
 
 type Base = {
   name: string;
@@ -29,6 +30,8 @@ function Page() {
   const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
   const [editingBaseId, setEditingBaseId] = useState<string | null>(null);
   const [editBaseName, setEditBaseName] = useState("");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarClicked, setIsSidebarClicked] = useState(false);
 
   const { data: bases, error } = api.base.getBases.useQuery();
   const editBase = api.base.editBaseName.useMutation();
@@ -92,24 +95,44 @@ function Page() {
 
   return (
     <div>
-      <Navbar userName={session?.user.name} userImage={session?.user.image} />
+      <Navbar
+        userName={session?.user.name}
+        setIsSidebarClicked={setIsSidebarClicked}
+      />
 
-      <main className="flex min-h-screen flex-row bg-gray-100">
-        <Sidebar openBaseModal={openBaseModal} />
+      <main className="flex min-h-screen flex-row bg-[#f9fafb]">
+        <Sidebar
+          openBaseModal={openBaseModal}
+          setIsSidebarOpen={setIsSidebarOpen}
+          isSidebarOpen={isSidebarOpen}
+          isSidebarClicked={isSidebarClicked}
+        />
 
-        <div className="mt-8 ml-14">
-          <p className="text-3xl font-semibold text-black">Home</p>
-          <p className="mt-10 mb-4">Recent bases</p>
+        <div className="mt-20 ml-14">
+          <p className="cursor-default text-3xl font-semibold text-black">
+            Home
+          </p>
+          <div className="flex flex-row gap-x-4">
+            <div className="mt-10 mb-4 flex cursor-pointer flex-row items-center gap-x-2 text-gray-500 hover:text-black">
+              Opened by you <IoIosArrowDown />
+            </div>
+            <div className="mt-10 mb-4 flex cursor-pointer flex-row items-center gap-x-2 text-gray-500 hover:text-black">
+              Show bases only <IoIosArrowDown />
+            </div>
+          </div>
+          <p className="mt-2 mb-6 ml-1 cursor-default text-sm font-semibold text-gray-500">
+            Past 7 days
+          </p>
 
           {error ? (
             <p>Error: {error.message}</p>
           ) : (
             // Bases
-            <div className="grid grid-cols-4 gap-x-4 gap-y-4">
+            <div className="ml-1 grid grid-cols-4 gap-x-4 gap-y-4">
               {allBases?.map((base) => (
                 <div
                   key={base.id}
-                  className="flex w-64 cursor-pointer flex-col items-start justify-between gap-2 rounded-lg border border-gray-300 bg-white p-4 shadow hover:shadow-md"
+                  className="flex w-74 cursor-pointer flex-col items-start justify-between gap-2 rounded-lg border border-gray-300 bg-white p-4 shadow hover:shadow-md"
                   onClick={(e) => {
                     if (editingBaseId !== base.id) {
                       router.push(`/base/${base.id}`);
@@ -118,21 +141,33 @@ function Page() {
                     }
                   }}
                 >
-                  <div className="flex w-full items-center justify-between">
-                    {editingBaseId === base.id ? (
-                      <input
-                        type="text"
-                        value={editBaseName}
-                        onChange={(e) => setEditBaseName(e.target.value)}
-                        onBlur={handleSaveEdit}
-                        autoFocus
-                        className="w-full"
-                      />
-                    ) : (
-                      <p className="text-md font-medium">{base.name}</p>
-                    )}
+                  <div className="flex h-full w-full flex-row items-center gap-x-2">
+                    <div className="flex h-14 w-19 items-center justify-center rounded-xl border border-teal-800 bg-teal-700 text-2xl text-white">
+                      {base.name.slice(0, 2)}
+                    </div>
 
-                    <BsThreeDots onClick={(e) => openDropwdown(base.id, e)} />
+                    <div className="flex w-full flex-col pl-2">
+                      <div className="mt-2 mb-1 flex w-full items-center justify-between">
+                        {editingBaseId === base.id ? (
+                          <input
+                            type="text"
+                            value={editBaseName}
+                            onChange={(e) => setEditBaseName(e.target.value)}
+                            onBlur={handleSaveEdit}
+                            autoFocus
+                            className="w-full"
+                          />
+                        ) : (
+                          <p className="text-md font-medium">{base.name}</p>
+                        )}
+
+                        <BsThreeDots
+                          onClick={(e) => openDropwdown(base.id, e)}
+                        />
+                      </div>
+
+                      <div className="mb-2 text-xs text-gray-600">Base</div>
+                    </div>
                   </div>
 
                   {/* Dropdown */}
@@ -157,8 +192,6 @@ function Page() {
                       </ul>
                     </div>
                   )}
-
-                  <div className="text-xs text-gray-600">Base</div>
                 </div>
               ))}
             </div>

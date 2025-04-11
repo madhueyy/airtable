@@ -33,21 +33,21 @@ type Cell = {
 
 const filterLabelMap: Record<string, string> = {
   // prettier-ignore
-  "EQUALS": "Equal to",
+  "Equal to": "EQUALS",
   // prettier-ignore
-  "NOT_EQUALS": "Not equal to",
+  "Not equal to": "NOT_EQUALS",
   // prettier-ignore
-  "CONTAINS": "Contains",
+  "Contains": "CONTAINS",
   // prettier-ignore
-  "NOT_CONTAINS": "Not contains",
+  "Not contains": "NOT_CONTAINS",
   // prettier-ignore
-  "IS_EMPTY": "Is empty",
+  "Is empty": "IS_EMPTY",
   // prettier-ignore
-  "IS_NOT_EMPTY": "Is not empty",
+  "Is not empty": "IS_NOT_EMPTY",
   // prettier-ignore
-  "GT": "Greater than",
+  "Greater than": "GT",
   // prettier-ignore
-  "LT": "Smaller than",
+  "Smaller than": "LT",
 };
 
 function Dropdown({

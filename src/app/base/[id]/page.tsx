@@ -11,6 +11,9 @@ import { GoPeople } from "react-icons/go";
 import { GoBell } from "react-icons/go";
 import { useSession } from "next-auth/react";
 import TableComponent from "~/app/_components/TableComponent";
+import { BsArrowLeftCircleFill } from "react-icons/bs";
+import { IoHelpCircleOutline } from "react-icons/io5";
+import { LuHistory } from "react-icons/lu";
 
 type Table = {
   id: string;
@@ -36,6 +39,7 @@ function Page() {
   const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
   const [editingTableId, setEditingTableId] = useState<string | null>(null);
   const [editTableName, setEditTableName] = useState("");
+  const [isHovering, setIsHovering] = useState(false);
 
   // Adds a new table to allTables and sends request to add new table
   // to database
@@ -67,6 +71,7 @@ function Page() {
   const openDropwdown = (tableId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setDropdownOpen((prev) => (prev === tableId ? null : tableId));
+    console.log("fsdfsdfs");
   };
 
   const handleEditName = (
@@ -113,18 +118,32 @@ function Page() {
   return (
     <div className="h-[100vh] bg-[#f7f7f7]">
       {/* Navbar */}
-      <div className="sticky top-0 z-1 mb-auto flex h-14 flex-row items-center gap-x-4 bg-teal-600 px-4 py-3">
-        <img
-          src="/Airtable_Logo_white.png"
-          className="w-5 cursor-pointer"
-          onClick={() => router.push("/home")}
-        />
+      <div className="mb-auto flex h-14 flex-row items-center gap-x-4 bg-teal-600 px-4 py-3">
+        <div
+          className="cursor-pointer"
+          onMouseEnter={() => setIsHovering(true)}
+          onMouseLeave={() => setIsHovering(false)}
+        >
+          {isHovering ? (
+            <BsArrowLeftCircleFill
+              className="text-white opacity-0 transition-opacity hover:opacity-100"
+              size={24}
+              onClick={() => router.push("/home")}
+            />
+          ) : (
+            <img
+              src="/Airtable_Logo_white.png"
+              className="w-6 opacity-100 transition-opacity hover:opacity-0"
+              onClick={() => router.push("/home")}
+            />
+          )}
+        </div>
 
         {/* Base name */}
         {error ? (
           <p className="text-lg font-semibold text-white">{error.message}</p>
         ) : (
-          <div className="flex flex-row items-center gap-x-2 text-white">
+          <div className="flex cursor-default flex-row items-center gap-x-2 text-white">
             <p className="text-lg font-semibold">{base?.name}</p>
             <IoIosArrowDown size={14} />
           </div>
@@ -144,17 +163,24 @@ function Page() {
           </button>
         </div>
 
-        <div className="ml-auto flex gap-x-4 text-sm text-teal-600">
-          <button className="flex items-center gap-x-1 rounded-full bg-white px-3 py-1">
+        <div className="ml-auto flex items-center gap-x-4 text-sm text-teal-600">
+          <button className="flex cursor-pointer flex-row items-center rounded-full px-3 py-2 text-sm text-gray-100 hover:bg-black/15 hover:text-white">
+            <LuHistory />
+          </button>
+          <button className="flex cursor-pointer flex-row items-center gap-x-1 rounded-full px-3 py-1 text-sm text-gray-100 hover:bg-black/15 hover:text-white">
+            <IoHelpCircleOutline />
+            Help
+          </button>
+          <button className="flex cursor-pointer items-center gap-x-1 rounded-full bg-gray-100 px-3 py-1 hover:bg-white">
             <GoPeople />
             Share
           </button>
-          <button className="flex h-8 w-8 items-center justify-center rounded-full bg-white">
+          <button className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-gray-100 hover:bg-white">
             <GoBell />
           </button>
           {session?.user.name && (
-            <div className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-white bg-purple-500">
-              <p className="text-lg text-white">
+            <div className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border border-white bg-purple-500">
+              <p className="text-sm text-white">
                 {session?.user.name?.slice(0, 1)}
               </p>
             </div>
@@ -162,12 +188,12 @@ function Page() {
         </div>
       </div>
 
-      <div className="sticky top-14 z-1 flex flex-row items-center bg-teal-600">
+      <div className="flex flex-row items-center bg-teal-600">
         {/* Tables tabs */}
         <div className="flex w-[90%] flex-row items-center rounded-tr-md bg-teal-700 px-4">
           {allTables?.map(
             ({ id: tableId, name }: { id: string; name: string }) => (
-              <div key={tableId}>
+              <div key={tableId} className="relative">
                 <div
                   className={`flex cursor-pointer items-center gap-x-2 rounded-t px-4 py-1.5 text-sm ${currTable === tableId ? "bg-white" : "bg-teal-700 text-white hover:bg-teal-800"}`}
                   onClick={() => handleTableChange(tableId)}
@@ -189,7 +215,7 @@ function Page() {
                 </div>
 
                 {dropdownOpen === tableId && (
-                  <div className="absolute z-1 mt-2 w-60 cursor-pointer rounded border border-gray-300 bg-white px-2 py-2 shadow-sm">
+                  <div className="absolute z-2 mt-2 w-60 cursor-pointer rounded border border-gray-300 bg-white px-2 py-2 shadow-sm">
                     <ul className="text-md text-sm text-gray-800">
                       <li
                         className="flex items-center gap-x-2 rounded-sm px-2 py-1 hover:bg-blue-100"

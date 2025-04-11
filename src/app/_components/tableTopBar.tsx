@@ -92,29 +92,29 @@ function TableTopBar({
   const columnFilterCount = activeFilters?.length;
 
   return (
-    <div className="sticky top-22 z-2 flex h-[5vh] flex-row items-center justify-between gap-x-4 bg-white px-4 py-2">
+    <div className="flex h-[5vh] flex-row items-center justify-between gap-x-4 bg-white px-4 py-2">
       {/* Filter, sort, view etc. buttons */}
       <div className="flex flex-row items-center gap-x-2">
-        <div
+        <button
           className={`flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 text-sm font-medium hover:bg-gray-100 ${viewsMenuOpen ? "bg-gray-100" : ""}`}
           onClick={() => setViewsMenuOpen((prev) => !prev)}
         >
           <GiHamburgerMenu className="text-gray-500" />
           <p>Views</p>
-        </div>
+        </button>
 
         <div className="mx-2 h-[18px] w-[1px] bg-black/30"></div>
 
         {/* Active view name */}
-        <div className="flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 font-medium hover:bg-gray-100">
+        <button className="flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 font-medium hover:bg-gray-100">
           <PiGridNineThin className="text-xl text-blue-500" />
           <p className="text-sm">{activeViewName}</p>
           <HiOutlineUserGroup />
           <IoIosArrowDown />
-        </div>
+        </button>
 
         {/* Hidden columns */}
-        <div
+        <button
           className={`flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 text-sm font-medium hover:bg-gray-100 ${hiddenColumnsCount > 0 ? "bg-blue-200 hover:bg-blue-300" : ""}`}
           onClick={() => setHiddenMenuOpen((prev) => !prev)}
         >
@@ -127,10 +127,10 @@ function TableTopBar({
           {hiddenMenuOpen && (
             <HiddenColumnsMenu table={table} tableData={tableData} />
           )}
-        </div>
+        </button>
 
         {/* Filter columns */}
-        <div
+        <button
           className={`flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 text-sm font-medium hover:bg-gray-100 ${columnFilterCount > 0 ? "bg-green-200 hover:bg-green-300" : ""}`}
         >
           <div
@@ -150,17 +150,18 @@ function TableTopBar({
               tableData={tableData}
               onFilterChange={onFilterChange}
               activeFilters={activeFilters}
+              setFilterMenuOpen={setFilterMenuOpen}
             />
           )}
-        </div>
+        </button>
 
-        <div className="flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 text-sm font-medium hover:bg-gray-100">
+        <button className="flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 text-sm font-medium hover:bg-gray-100">
           <BsCardList className="text-gray-600" />
           <p>Group</p>
-        </div>
+        </button>
 
         {/* Sort columns */}
-        <div
+        <button
           className={`flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 text-sm font-medium hover:bg-gray-100 ${columnSortCount && columnSortCount > 0 ? "bg-orange-200 hover:bg-orange-300" : ""}`}
         >
           <PiArrowsDownUp className="text-gray-600" />
@@ -169,21 +170,21 @@ function TableTopBar({
           ) : (
             <p>Sort</p>
           )}
-        </div>
+        </button>
 
-        <div className="flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 text-sm font-medium hover:bg-gray-100">
+        <button className="flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 text-sm font-medium hover:bg-gray-100">
           <IoColorFillOutline className="text-gray-600" />
           <p>Colour</p>
-        </div>
+        </button>
 
-        <div className="flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 font-medium hover:bg-gray-100">
+        <button className="flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 font-medium hover:bg-gray-100">
           <CgFormatLineHeight className="text-gray-600" />
-        </div>
+        </button>
 
-        <div className="flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 font-medium hover:bg-gray-100">
+        <button className="flex cursor-pointer flex-row items-center gap-x-2 rounded-xs px-2 py-1 font-medium hover:bg-gray-100">
           <GrShare className="text-xs text-gray-600" />
           <p className="text-sm">Share and Sync</p>
-        </div>
+        </button>
 
         {isLoading && <Loading />}
       </div>
