@@ -226,7 +226,7 @@ export const addRows = async (
   console.log("hello");
   setIsLoading(true);
 
-  const BATCH_SIZE = 1000;
+  const BATCH_SIZE = 10000;
   const TOTAL = 100000;
   const currRowLength = table?.columns[0]?.cells.length ?? 0;
 
@@ -234,6 +234,9 @@ export const addRows = async (
   try {
     for (let batchStart = 0; batchStart < TOTAL; batchStart += BATCH_SIZE) {
       const batchSize = Math.min(BATCH_SIZE, TOTAL - batchStart);
+      console.log(
+        `Processing batch ${batchStart / BATCH_SIZE + 1}/${Math.ceil(TOTAL / BATCH_SIZE)}`,
+      );
 
       const newCells = Array.from({ length: batchSize }).flatMap(
         (_, rowIndex) => {

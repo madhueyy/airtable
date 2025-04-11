@@ -49,21 +49,21 @@ type Cell = {
 
 const filterLabelMap: Record<string, string> = {
   // prettier-ignore
-  "EQUALS": "Equal to",
+  "Equal to": "EQUALS",
   // prettier-ignore
-  "NOT_EQUALS": "Not equal to",
+  "Not equal to": "NOT_EQUALS",
   // prettier-ignore
-  "CONTAINS": "Contains",
+  "Contains": "CONTAINS",
   // prettier-ignore
-  "NOT_CONTAINS": "Not contains",
+  "Not contains": "NOT_CONTAINS",
   // prettier-ignore
-  "IS_EMPTY": "Is empty",
+  "Is empty": "IS_EMPTY",
   // prettier-ignore
-  "IS_NOT_EMPTY": "Is not empty",
+  "Is not empty": "IS_NOT_EMPTY",
   // prettier-ignore
-  "GT": "Greater than",
+  "Greater than": "GT",
   // prettier-ignore
-  "LT": "Smaller than",
+  "Smaller than": "LT",
 };
 
 function TableComponent({ tableId }: { tableId: string }) {
@@ -366,7 +366,7 @@ function TableComponent({ tableId }: { tableId: string }) {
 
     const newFilters = filters.map((filter) => ({
       columnId: filter.id,
-      filterType: filterLabelMap[filter.filterType] || filter.filterType,
+      filterType: filterLabelMap[filter.filterType] ?? filter.filterType,
       value: filter.value,
     }));
 
@@ -399,13 +399,14 @@ function TableComponent({ tableId }: { tableId: string }) {
   // Load more rows
   useEffect(() => {
     const [lastItem] = [...rowVirtualizer.getVirtualItems()].reverse();
-
-    if (
+    const isLastItemVisible =
       lastItem &&
-      lastItem?.index >= table.getRowModel().rows.length - 1 &&
-      hasNextPage &&
-      !isFetchingNextPage
-    ) {
+      lastItem.index >= table.getRowModel().rows.length - 1 &&
+      parentRef.current &&
+      lastItem.start <
+        parentRef.current.scrollTop + parentRef.current.clientHeight;
+
+    if (isLastItemVisible && hasNextPage && !isFetchingNextPage) {
       fetchNextPage();
     }
   }, [
